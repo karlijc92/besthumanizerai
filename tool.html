@@ -20,20 +20,31 @@
       <a href="pricing.html">Pricing</a>
       <a href="features.html">Features</a>
       <a href="about.html">About</a>
+      <a href="contact.html">Contact</a>
     </div>
   </nav>
 
   <section class="hero">
-
-    <h1>BestHumanizerAI Tool</h1>
+    <h1>Humanizer Tool</h1>
 
     <p>
-      Humanize your writing while protecting important numbers, statistics, citations, and data.
+      Paste your writing below. BestHumanizerAI helps reduce robotic phrasing while keeping numbers, percentages, dates, citations, and meaning protected.
     </p>
-
   </section>
 
   <div class="pricing-box">
+
+    <h2>Choose Rewrite Mode</h2>
+
+    <select id="rewriteMode">
+      <option value="regular">Regular Humanizer</option>
+      <option value="data-safe">Data-Safe Humanizer</option>
+      <option value="academic">Academic Humanizer</option>
+      <option value="business">Business Report Humanizer</option>
+      <option value="resume">Job/Resume Humanizer</option>
+    </select>
+
+    <br><br>
 
     <h2>Paste Your Writing</h2>
 
@@ -48,6 +59,10 @@
     <div id="outputText" class="output-box">
       Your humanized text will appear here.
     </div>
+
+    <p class="tool-note">
+      Note: This early version provides basic rewriting support. Final text should always be reviewed before submission or professional use.
+    </p>
 
   </div>
 
