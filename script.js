@@ -19,55 +19,49 @@ function humanizeText() {
 
   let humanized = input;
 
-  humanized = humanized.replace(
-    /reported revenue growth/gi,
-    "saw revenue growth"
-  );
+  const rewritePatterns = [
 
-  humanized = humanized.replace(
-    /increasing total annual revenue/gi,
-    "bringing total annual revenue higher"
-  );
+    ["reported revenue growth", "saw revenue growth"],
+    ["experienced revenue growth", "continued showing revenue growth"],
+    ["increasing total annual revenue", "bringing total annual revenue higher"],
+    ["Operating expenses rose", "Operating expenses moved higher"],
+    ["Operating expenses increased", "The company also saw higher operating expenses"],
+    ["improved", "continued to improve"],
+    ["strengthened", "showed additional improvement"],
+    ["Customer retention increased", "The company also improved customer retention"],
+    ["average order value climbed", "average order value also increased"],
+    ["reduced fulfillment time", "managed to shorten fulfillment time"],
+    ["lowered customer acquisition costs", "reduced customer acquisition expenses"],
+    ["therefore", "as a result"],
+    ["however", "at the same time"],
+    ["while", "and"],
+    ["also", "in addition"]
 
-  humanized = humanized.replace(
-    /Operating expenses rose/gi,
-    "Operating expenses moved higher"
-  );
+  ];
 
-  humanized = humanized.replace(
-    /improved/gi,
-    "continued to improve"
-  );
+  rewritePatterns.forEach(function(pair) {
 
-  humanized = humanized.replace(
-    /Customer retention increased/gi,
-    "The company also improved customer retention"
-  );
+    const pattern =
+      new RegExp(pair[0], "gi");
 
-  humanized = humanized.replace(
-    /average order value climbed/gi,
-    "average order value also increased"
-  );
+    humanized =
+      humanized.replace(pattern, pair[1]);
 
-  humanized = humanized.replace(
-    /reduced fulfillment time/gi,
-    "managed to shorten fulfillment time"
-  );
+  });
 
-  humanized = humanized.replace(
-    /lowered customer acquisition costs/gi,
-    "reduced customer acquisition expenses"
-  );
+  const sentences =
+    humanized.split(". ");
 
-  humanized = humanized.replace(
-    /The organization also/gi,
-    "In addition,"
-  );
+  if (sentences.length > 2) {
 
-  humanized = humanized.replace(
-    /while/gi,
-    "and"
-  );
+    const firstSentence =
+      sentences.shift();
+
+    sentences.push(firstSentence);
+
+    humanized =
+      sentences.join(". ");
+  }
 
   if (rewriteMode === "academic") {
 
