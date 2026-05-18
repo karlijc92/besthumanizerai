@@ -1,21 +1,24 @@
 function humanizeText() {
 
-  const input = document.getElementById("inputText").value;
+  const input =
+    document.getElementById("inputText").value;
 
-  const output = document.getElementById("outputText");
+  const output =
+    document.getElementById("outputText");
 
   const rewriteMode =
     document.getElementById("rewriteMode").value;
 
   if (input.trim() === "") {
 
-    output.innerText = "Please paste text first.";
+    output.innerText =
+      "Please paste text first.";
 
     return;
   }
 
   const originalNumbers =
-    input.match(/\d+[%.,]?\d*/g) || [];
+    input.match(/[\d]+(?:\.\d+)?%?/g) || [];
 
   let humanized = input;
 
@@ -88,14 +91,20 @@ function humanizeText() {
   }
 
   const newNumbers =
-    humanized.match(/\d+[%.,]?\d*/g) || [];
+    humanized.match(/[\d]+(?:\.\d+)?%?/g) || [];
+
+  const originalSorted =
+    [...originalNumbers].sort();
+
+  const newSorted =
+    [...newNumbers].sort();
 
   let numberWarning =
     "✔ Numbers preserved successfully.";
 
   if (
-    JSON.stringify(originalNumbers) !==
-    JSON.stringify(newNumbers)
+    JSON.stringify(originalSorted) !==
+    JSON.stringify(newSorted)
   ) {
 
     numberWarning =
