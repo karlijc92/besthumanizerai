@@ -16,6 +16,11 @@ h2 {
   margin-top: 0;
 }
 
+h3 {
+  font-size: 32px;
+  margin-top: 20px;
+}
+
 p {
   font-size: 20px;
   max-width: 700px;
@@ -25,14 +30,34 @@ p {
 
 .pricing-box {
   background: white;
-  max-width: 500px;
+  max-width: 700px;
   margin: 30px auto;
   padding: 30px;
   border-radius: 16px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
 
-h3 {
-  font-size: 32px;
-  margin-top: 20px;
+textarea {
+  width: 100%;
+  height: 250px;
+  padding: 15px;
+  border-radius: 12px;
+  border: 1px solid #d1d5db;
+  font-size: 16px;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+button {
+  background-color: #111827;
+  color: white;
+  border: none;
+  padding: 14px 28px;
+  border-radius: 12px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+button:hover {
+  opacity: 0.9;
 }
