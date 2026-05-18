@@ -4,12 +4,18 @@ function humanizeText() {
 
   const output = document.getElementById("outputText");
 
+  const rewriteMode =
+    document.getElementById("rewriteMode").value;
+
   if (input.trim() === "") {
 
     output.innerText = "Please paste text first.";
 
     return;
   }
+
+  const originalNumbers =
+    input.match(/\d+[%.,]?\d*/g) || [];
 
   let humanized = input;
 
@@ -19,7 +25,47 @@ function humanizeText() {
   humanized = humanized.replace(/\btherefore\b/gi, "so");
   humanized = humanized.replace(/\bhowever\b/gi, "but");
 
+  if (rewriteMode === "academic") {
+
+    humanized =
+      "Academic Mode:\n\n" + humanized;
+  }
+
+  if (rewriteMode === "business") {
+
+    humanized =
+      "Business Report Mode:\n\n" + humanized;
+  }
+
+  if (rewriteMode === "resume") {
+
+    humanized =
+      "Resume Mode:\n\n" + humanized;
+  }
+
+  if (rewriteMode === "data-safe") {
+
+    humanized =
+      "Data-Safe Mode:\n\n" + humanized;
+  }
+
+  const newNumbers =
+    humanized.match(/\d+[%.,]?\d*/g) || [];
+
+  let numberWarning =
+    "✔ Numbers preserved successfully.";
+
+  if (
+    JSON.stringify(originalNumbers) !==
+    JSON.stringify(newNumbers)
+  ) {
+
+    numberWarning =
+      "⚠ Possible number mismatch detected.";
+  }
+
   output.innerText =
-    "Humanized Version:\n\n" +
+    numberWarning +
+    "\n\n" +
     humanized;
 }
