@@ -21,42 +21,52 @@ function humanizeText() {
 
   humanized = humanized.replace(
     /reported revenue growth/gi,
-    "experienced revenue growth"
+    "saw revenue growth"
   );
 
   humanized = humanized.replace(
     /increasing total annual revenue/gi,
-    "raising total annual revenue"
+    "bringing total annual revenue higher"
   );
 
   humanized = humanized.replace(
     /Operating expenses rose/gi,
-    "Operating expenses increased"
+    "Operating expenses moved higher"
   );
 
   humanized = humanized.replace(
     /improved/gi,
-    "strengthened"
+    "continued to improve"
   );
 
   humanized = humanized.replace(
     /Customer retention increased/gi,
-    "Customer retention climbed"
+    "The company also improved customer retention"
   );
 
   humanized = humanized.replace(
     /average order value climbed/gi,
-    "average order value increased"
+    "average order value also increased"
   );
 
   humanized = humanized.replace(
     /reduced fulfillment time/gi,
-    "shortened fulfillment time"
+    "managed to shorten fulfillment time"
   );
 
   humanized = humanized.replace(
     /lowered customer acquisition costs/gi,
     "reduced customer acquisition expenses"
+  );
+
+  humanized = humanized.replace(
+    /The organization also/gi,
+    "In addition,"
+  );
+
+  humanized = humanized.replace(
+    /while/gi,
+    "and"
   );
 
   if (rewriteMode === "academic") {
