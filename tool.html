@@ -21,13 +21,21 @@
 
     <h2>Paste Your Writing</h2>
 
-    <textarea placeholder="Paste your paragraph here..."></textarea>
+    <textarea id="inputText" placeholder="Paste your paragraph here..."></textarea>
 
     <br><br>
 
-    <button>Humanize Text</button>
+    <button onclick="humanizeText()">Humanize Text</button>
+
+    <h2>Output</h2>
+
+    <div id="outputText" class="output-box">
+      Your humanized text will appear here.
+    </div>
 
   </div>
+
+  <script src="script.js"></script>
 
 </body>
 </html>
