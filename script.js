@@ -19,11 +19,45 @@ function humanizeText() {
 
   let humanized = input;
 
-  humanized = humanized.replace(/\butilize\b/gi, "use");
-  humanized = humanized.replace(/\bfurthermore\b/gi, "also");
-  humanized = humanized.replace(/\bin order to\b/gi, "to");
-  humanized = humanized.replace(/\btherefore\b/gi, "so");
-  humanized = humanized.replace(/\bhowever\b/gi, "but");
+  humanized = humanized.replace(
+    /reported revenue growth/gi,
+    "experienced revenue growth"
+  );
+
+  humanized = humanized.replace(
+    /increasing total annual revenue/gi,
+    "raising total annual revenue"
+  );
+
+  humanized = humanized.replace(
+    /Operating expenses rose/gi,
+    "Operating expenses increased"
+  );
+
+  humanized = humanized.replace(
+    /improved/gi,
+    "strengthened"
+  );
+
+  humanized = humanized.replace(
+    /Customer retention increased/gi,
+    "Customer retention climbed"
+  );
+
+  humanized = humanized.replace(
+    /average order value climbed/gi,
+    "average order value increased"
+  );
+
+  humanized = humanized.replace(
+    /reduced fulfillment time/gi,
+    "shortened fulfillment time"
+  );
+
+  humanized = humanized.replace(
+    /lowered customer acquisition costs/gi,
+    "reduced customer acquisition expenses"
+  );
 
   if (rewriteMode === "academic") {
 
