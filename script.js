@@ -1,12 +1,19 @@
 let lastHumanizedText = "";
 
 function humanizeText() {
-  const input = document.getElementById("inputText").value;
-  const output = document.getElementById("outputText");
-  const rewriteMode = document.getElementById("rewriteMode").value;
+
+  const input =
+    document.getElementById("inputText").value;
+
+  const output =
+    document.getElementById("outputText");
+
+  const rewriteMode =
+    document.getElementById("rewriteMode").value;
 
   if (input.trim() === "") {
-    output.innerText = "Please paste text first.";
+    output.innerText =
+      "Please paste text first.";
     return;
   }
 
@@ -19,18 +26,16 @@ function humanizeText() {
     input.match(/[\d]+(?:,\d{3})*(?:\.\d+)?%?/g) || [];
 
   let humanized =
-    sourceText.replace(/\s+/g, " ").trim();
-
-  humanized = advancedHumanRewrite(
-    humanized,
-    rewriteMode
-  );
+    deepHumanize(sourceText, rewriteMode);
 
   const newNumbers =
     humanized.match(/[\d]+(?:,\d{3})*(?:\.\d+)?%?/g) || [];
 
-  const originalSorted = [...originalNumbers].sort();
-  const newSorted = [...newNumbers].sort();
+  const originalSorted =
+    [...originalNumbers].sort();
+
+  const newSorted =
+    [...newNumbers].sort();
 
   let warningText = "";
 
@@ -38,186 +43,127 @@ function humanizeText() {
     JSON.stringify(originalSorted) !==
     JSON.stringify(newSorted)
   ) {
+
     warningText =
-      "⚠ Possible number mismatch detected. Please review carefully.\n\n";
-  }
-
-  let modeLabel = "";
-
-  if (rewriteMode === "academic") {
-    modeLabel = "Academic Mode:\n\n";
-  }
-
-  if (rewriteMode === "business") {
-    modeLabel = "Business Report Mode:\n\n";
-  }
-
-  if (rewriteMode === "resume") {
-    modeLabel = "Resume Mode:\n\n";
-  }
-
-  if (rewriteMode === "data-safe") {
-    modeLabel = "Data-Safe Mode:\n\n";
+      "⚠ Possible number mismatch detected.\n\n";
   }
 
   lastHumanizedText = humanized;
 
   output.innerText =
-    warningText +
-    modeLabel +
-    humanized;
+    warningText + humanized;
 }
 
-function advancedHumanRewrite(text, mode) {
+function deepHumanize(text, mode) {
 
   let rewritten = text;
 
-  const deepRewrites = [
-    {
-      pattern:
-        /The company reported revenue growth of ([\d.,]+%?) in ([\d]{4}), increasing total annual revenue from \$?([\d.,]+)\s?million to \$?([\d.,]+)\s?million\./gi,
-
-      replacements: [
-        "Revenue continued climbing in $2, with growth of $1 pushing annual revenue from $3 million to $4 million.",
-        "In $2, the company generated stronger revenue results, as growth of $1 increased annual revenue from $3 million to $4 million.",
-        "The company experienced revenue expansion in $2, with annual revenue rising from $3 million to $4 million after growth of $1."
-      ]
-    },
-
-    {
-      pattern:
-        /Operating expenses rose by ([\d.,]+%?) during the same period, while net income improved by ([\d.,]+%?) due to higher subscription retention and reduced acquisition costs\./gi,
-
-      replacements: [
-        "Although operating expenses increased by $1, net income still improved by $2 because of stronger customer retention and lower acquisition costs.",
-        "The company saw operating expenses move higher by $1, but net income improved by $2 as retention strengthened and acquisition expenses declined.",
-        "Even with a $1 increase in operating expenses, the business reported a $2 improvement in net income driven by customer retention gains and lower acquisition spending."
-      ]
-    },
-
-    {
-      pattern:
-        /Customer retention increased from ([\d.,]+%?) in ([\d]{4}) to ([\d.,]+%?) in ([\d]{4}), and average order value climbed from \$?([\d.,]+) to \$?([\d.,]+)\./gi,
-
-      replacements: [
-        "Customer retention improved from $1 in $2 to $3 in $4, while average order value also increased from $5 to $6.",
-        "The company retained more customers over time, with retention rising from $1 in $2 to $3 in $4. Average order value also moved higher from $5 to $6.",
-        "Retention trends strengthened between $2 and $4, increasing from $1 to $3, while average order value rose from $5 to $6."
-      ]
-    },
-
-    {
-      pattern:
-        /The company also reduced fulfillment time by ([\d.,]+%?) and lowered customer acquisition costs by ([\d.,]+%?) through workflow automation and targeted digital campaigns\./gi,
-
-      replacements: [
-        "Operational efficiency also improved, with fulfillment time reduced by $1 and customer acquisition costs lowered by $2 through automation initiatives and targeted campaigns.",
-        "The company became more operationally efficient by cutting fulfillment time by $1 and reducing acquisition costs by $2 using automation and digital marketing strategies.",
-        "Workflow automation and digital campaigns helped reduce fulfillment time by $1 while lowering customer acquisition expenses by $2."
-      ]
-    }
-  ];
-
-  deepRewrites.forEach((rule) => {
-
-    rewritten = rewritten.replace(
-      rule.pattern,
-      function () {
-
-        const args = arguments;
-
-        const replacement =
-          rule.replacements[
-            Math.floor(
-              Math.random() * rule.replacements.length
-            )
-          ];
-
-        return replacement.replace(
-          /\$(\d+)/g,
-          (_, index) => args[index]
-        );
-      }
-    );
-  });
-
-  const fillerVariations = [
-    ["however", "even so"],
-    ["therefore", "as a result"],
+  const replacements = [
+    ["reported revenue growth", "saw stronger revenue performance"],
+    ["Operating expenses rose", "Operating costs moved higher"],
+    ["net income improved", "profitability still improved"],
+    ["Customer retention increased", "Customer retention became stronger"],
+    ["average order value climbed", "average order value moved upward"],
+    ["reduced fulfillment time", "shortened fulfillment timelines"],
+    ["lowered customer acquisition costs", "reduced customer acquisition spending"],
+    ["therefore", "because of this"],
+    ["however", "still"],
     ["in addition", "also"],
-    ["overall", "taken together"],
-    ["important", "notable"],
-    ["significant", "meaningful"],
-    ["improved", "became stronger"],
-    ["increased", "moved higher"],
-    ["decreased", "moved lower"],
-    ["demonstrates", "suggests"],
-    ["indicates", "shows"],
-    ["while", "at the same time"]
+    ["overall", "looking at the full picture"],
+    ["demonstrates", "shows"],
+    ["significant", "fairly meaningful"]
   ];
 
-  fillerVariations.forEach(([from, to]) => {
+  replacements.forEach(pair => {
 
     rewritten = rewritten.replace(
-      new RegExp(from, "gi"),
-      to
+      new RegExp(pair[0], "gi"),
+      pair[1]
     );
   });
 
-  let sentences = rewritten
-    .split(/(?<=\.)\s+/)
-    .map(sentence => sentence.trim())
-    .filter(Boolean);
+  let sentences =
+    rewritten.split(/(?<=[.!?])\s+/);
 
   sentences = sentences.map((sentence, index) => {
 
-    if (
-      index % 2 === 0 &&
-      sentence.length > 70
-    ) {
+    sentence = sentence.trim();
+
+    if (sentence.length < 15) {
+      return sentence;
+    }
+
+    if (index % 2 === 0) {
 
       const starters = [
         "What stands out is that",
-        "One important takeaway is that",
-        "From a broader perspective,",
-        "Another factor worth noting is that",
-        "The results also suggest that"
+        "At the same time,",
+        "Another thing worth noting is that",
+        "Interestingly,",
+        "From a broader perspective,"
       ];
 
-      const starter =
+      const randomStarter =
         starters[
           Math.floor(
             Math.random() * starters.length
           )
         ];
 
-      return (
-        starter +
+      sentence =
+        randomStarter +
         " " +
         sentence.charAt(0).toLowerCase() +
-        sentence.slice(1)
-      );
+        sentence.slice(1);
+    }
+
+    if (
+      sentence.length > 120 &&
+      Math.random() > 0.5
+    ) {
+
+      sentence =
+        sentence.replace(/, while/gi, ". Meanwhile,");
+
+      sentence =
+        sentence.replace(/, and/gi, ". Also,");
+    }
+
+    if (
+      Math.random() > 0.6
+    ) {
+
+      sentence =
+        sentence.replace(
+          /\bthe company\b/gi,
+          "the business"
+        );
     }
 
     return sentence;
+
   });
 
   if (sentences.length > 3) {
 
-    const movedSentence =
+    const moved =
       sentences.splice(0, 1)[0];
 
-    sentences.splice(2, 0, movedSentence);
+    sentences.splice(2, 0, moved);
   }
 
-  rewritten = sentences.join(" ");
+  rewritten =
+    sentences.join(" ");
+
+  rewritten =
+    rewritten.replace(/\s+/g, " ").trim();
 
   if (mode === "academic") {
 
     rewritten =
       rewritten.replace(
-        /What stands out is that/gi,
-        "The findings suggest that"
+        /Interestingly,/gi,
+        "Importantly,"
       );
   }
 
@@ -225,7 +171,7 @@ function advancedHumanRewrite(text, mode) {
 
     rewritten =
       rewritten.replace(
-        /One important takeaway is that/gi,
+        /What stands out is that/gi,
         "From a business standpoint,"
       );
   }
@@ -234,15 +180,9 @@ function advancedHumanRewrite(text, mode) {
 
     rewritten =
       rewritten.replace(
-        /The company/gi,
-        "The organization"
+        /\bthe business\b/gi,
+        "the organization"
       );
-  }
-
-  if (mode === "data-safe") {
-
-    rewritten +=
-      "\n\nReview note: Numerical values and percentages should always be verified against the original source material before final use.";
   }
 
   return rewritten;
