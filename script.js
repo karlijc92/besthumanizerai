@@ -73,20 +73,6 @@ function calculateHumanizationStrength(original, rewritten) {
     score += 1;
   }
 
-  const structureWords = [
-    "Interestingly",
-    "What stands out",
-    "From a broader perspective",
-    "Another thing worth noting",
-    "The bigger picture"
-  ];
-
-  structureWords.forEach(word => {
-    if (rewritten.includes(word)) {
-      score += 1;
-    }
-  });
-
   if (score <= 2) {
     return "Moderate";
   }
@@ -100,7 +86,8 @@ function calculateHumanizationStrength(original, rewritten) {
 
 function deepHumanize(text, mode) {
 
-  let rewritten = text.replace(/\s+/g, " ").trim();
+  let rewritten =
+    text.replace(/\s+/g, " ").trim();
 
   const replacements = [
     ["reported revenue growth", "saw stronger revenue performance"],
@@ -122,16 +109,33 @@ function deepHumanize(text, mode) {
   ];
 
   replacements.forEach(pair => {
-    rewritten = rewritten.replace(
-      new RegExp(pair[0], "gi"),
-      pair[1]
-    );
+
+    rewritten =
+      rewritten.replace(
+        new RegExp(pair[0], "gi"),
+        pair[1]
+      );
   });
 
-  let sentences = rewritten
-    .split(/(?<=[.!?])\s+/)
-    .map(sentence => sentence.trim())
-    .filter(Boolean);
+  let sentences =
+    rewritten
+      .split(/(?<=[.!?])\s+/)
+      .map(sentence => sentence.trim())
+      .filter(Boolean);
+
+  const availableStarters = [
+    "What stands out is that",
+    "At the same time,",
+    "Another thing worth noting is that",
+    "Interestingly,",
+    "From a broader perspective,",
+    "The bigger picture here is that",
+    "One detail that matters is that",
+    "An important point is that",
+    "Looking deeper into the data,"
+  ];
+
+  let usedStarters = [];
 
   sentences = sentences.map((sentence, index) => {
 
@@ -141,22 +145,24 @@ function deepHumanize(text, mode) {
 
     if (index % 2 === 0) {
 
-      const starters = [
-        "What stands out is that",
-        "At the same time,",
-        "Another thing worth noting is that",
-        "Interestingly,",
-        "From a broader perspective,",
-        "The bigger picture here is that",
-        "One detail that matters is that"
-      ];
+      let possibleStarters =
+        availableStarters.filter(
+          starter => !usedStarters.includes(starter)
+        );
+
+      if (possibleStarters.length === 0) {
+        usedStarters = [];
+        possibleStarters = availableStarters;
+      }
 
       const randomStarter =
-        starters[
+        possibleStarters[
           Math.floor(
-            Math.random() * starters.length
+            Math.random() * possibleStarters.length
           )
         ];
+
+      usedStarters.push(randomStarter);
 
       sentence =
         randomStarter +
@@ -227,7 +233,8 @@ function deepHumanize(text, mode) {
     sentences.splice(1, 0, movedSecond);
   }
 
-  rewritten = sentences.join(" ");
+  rewritten =
+    sentences.join(" ");
 
   rewritten =
     rewritten.replace(/\s+/g, " ").trim();
