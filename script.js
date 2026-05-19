@@ -1,62 +1,44 @@
 let lastHumanizedText = "";
 
 function humanizeText() {
-
-  const input =
-    document.getElementById("inputText").value;
-
-  const output =
-    document.getElementById("outputText");
-
-  const rewriteMode =
-    document.getElementById("rewriteMode").value;
+  const input = document.getElementById("inputText").value;
+  const output = document.getElementById("outputText");
+  const rewriteMode = document.getElementById("rewriteMode").value;
 
   if (input.trim() === "") {
-    output.innerText =
-      "Please paste text first.";
+    output.innerText = "Please paste text first.";
     return;
   }
 
-  const sourceText =
-    lastHumanizedText.trim() !== ""
-      ? lastHumanizedText
-      : input;
+  const sourceText = input;
 
   const originalNumbers =
     input.match(/[\d]+(?:,\d{3})*(?:\.\d+)?%?/g) || [];
 
-  let humanized =
-    deepHumanize(sourceText, rewriteMode);
+  let humanized = sourceText;
+
+  for (let i = 0; i < 4; i++) {
+    humanized = deepHumanize(humanized, rewriteMode);
+  }
 
   const newNumbers =
     humanized.match(/[\d]+(?:,\d{3})*(?:\.\d+)?%?/g) || [];
 
-  const originalSorted =
-    [...originalNumbers].sort();
-
-  const newSorted =
-    [...newNumbers].sort();
+  const originalSorted = [...originalNumbers].sort();
+  const newSorted = [...newNumbers].sort();
 
   let warningText = "";
 
-  if (
-    JSON.stringify(originalSorted) !==
-    JSON.stringify(newSorted)
-  ) {
-
-    warningText =
-      "⚠ Possible number mismatch detected.\n\n";
+  if (JSON.stringify(originalSorted) !== JSON.stringify(newSorted)) {
+    warningText = "⚠ Possible number mismatch detected.\n\n";
   }
 
   lastHumanizedText = humanized;
-
-  output.innerText =
-    warningText + humanized;
+  output.innerText = warningText + humanized;
 }
 
 function deepHumanize(text, mode) {
-
-  let rewritten = text;
+  let rewritten = text.replace(/\s+/g, " ").trim();
 
   const replacements = [
     ["reported revenue growth", "saw stronger revenue performance"],
@@ -71,44 +53,37 @@ function deepHumanize(text, mode) {
     ["in addition", "also"],
     ["overall", "looking at the full picture"],
     ["demonstrates", "shows"],
-    ["significant", "fairly meaningful"]
+    ["significant", "fairly meaningful"],
+    ["during the same period", "around that same time"],
+    ["management stated", "management noted"],
+    ["primarily", "mostly"]
   ];
 
   replacements.forEach(pair => {
-
-    rewritten = rewritten.replace(
-      new RegExp(pair[0], "gi"),
-      pair[1]
-    );
+    rewritten = rewritten.replace(new RegExp(pair[0], "gi"), pair[1]);
   });
 
-  let sentences =
-    rewritten.split(/(?<=[.!?])\s+/);
+  let sentences = rewritten
+    .split(/(?<=[.!?])\s+/)
+    .map(sentence => sentence.trim())
+    .filter(Boolean);
 
   sentences = sentences.map((sentence, index) => {
-
-    sentence = sentence.trim();
-
-    if (sentence.length < 15) {
-      return sentence;
-    }
+    if (sentence.length < 15) return sentence;
 
     if (index % 2 === 0) {
-
       const starters = [
         "What stands out is that",
         "At the same time,",
         "Another thing worth noting is that",
         "Interestingly,",
-        "From a broader perspective,"
+        "From a broader perspective,",
+        "The bigger picture here is that",
+        "One detail that matters is that"
       ];
 
       const randomStarter =
-        starters[
-          Math.floor(
-            Math.random() * starters.length
-          )
-        ];
+        starters[Math.floor(Math.random() * starters.length)];
 
       sentence =
         randomStarter +
@@ -117,72 +92,53 @@ function deepHumanize(text, mode) {
         sentence.slice(1);
     }
 
-    if (
-      sentence.length > 120 &&
-      Math.random() > 0.5
-    ) {
-
-      sentence =
-        sentence.replace(/, while/gi, ". Meanwhile,");
-
-      sentence =
-        sentence.replace(/, and/gi, ". Also,");
+    if (sentence.length > 115 && Math.random() > 0.35) {
+      sentence = sentence.replace(/, while/gi, ". Meanwhile,");
+      sentence = sentence.replace(/, and/gi, ". Also,");
+      sentence = sentence.replace(/, because/gi, ". This happened because");
     }
 
-    if (
-      Math.random() > 0.6
-    ) {
+    if (Math.random() > 0.55) {
+      sentence = sentence.replace(/\bthe company\b/gi, "the business");
+    }
 
-      sentence =
-        sentence.replace(
-          /\bthe company\b/gi,
-          "the business"
-        );
+    if (Math.random() > 0.7) {
+      sentence = sentence.replace(/\bthe business\b/gi, "the organization");
     }
 
     return sentence;
-
   });
 
   if (sentences.length > 3) {
-
-    const moved =
-      sentences.splice(0, 1)[0];
-
+    const moved = sentences.splice(0, 1)[0];
     sentences.splice(2, 0, moved);
   }
 
-  rewritten =
-    sentences.join(" ");
+  if (sentences.length > 5) {
+    const movedSecond = sentences.splice(4, 1)[0];
+    sentences.splice(1, 0, movedSecond);
+  }
 
-  rewritten =
-    rewritten.replace(/\s+/g, " ").trim();
+  rewritten = sentences.join(" ");
+  rewritten = rewritten.replace(/\s+/g, " ").trim();
 
   if (mode === "academic") {
-
-    rewritten =
-      rewritten.replace(
-        /Interestingly,/gi,
-        "Importantly,"
-      );
+    rewritten = rewritten.replace(/Interestingly,/gi, "Importantly,");
+    rewritten = rewritten.replace(/What stands out is that/gi, "The findings suggest that");
   }
 
   if (mode === "business") {
-
-    rewritten =
-      rewritten.replace(
-        /What stands out is that/gi,
-        "From a business standpoint,"
-      );
+    rewritten = rewritten.replace(/What stands out is that/gi, "From a business standpoint,");
+    rewritten = rewritten.replace(/The bigger picture here is that/gi, "From an operational perspective,");
   }
 
   if (mode === "resume") {
+    rewritten = rewritten.replace(/\bthe business\b/gi, "the organization");
+    rewritten = rewritten.replace(/\bthe company\b/gi, "the organization");
+  }
 
-    rewritten =
-      rewritten.replace(
-        /\bthe business\b/gi,
-        "the organization"
-      );
+  if (mode === "data-safe") {
+    rewritten = rewritten.replace(/Interestingly,/gi, "Notably,");
   }
 
   return rewritten;
