@@ -5,7 +5,6 @@ function humanizeText() {
   const input = document.getElementById("inputText").value;
   const output = document.getElementById("outputText");
   const rewriteMode = document.getElementById("rewriteMode").value;
-  const statusBox = document.getElementById("humanizerStatus");
 
   if (input.trim() === "") {
     output.innerText = "Please paste text first.";
@@ -36,52 +35,10 @@ function humanizeText() {
       "⚠ Possible number mismatch detected.\n\n";
   }
 
-  const strengthScore =
-    calculateHumanizationStrength(
-      sourceText,
-      humanized
-    );
-
-  statusBox.innerText =
-    "Humanization Strength: " + strengthScore;
-
   lastHumanizedText = humanized;
 
   output.innerText =
     warningText + humanized;
-}
-
-function calculateHumanizationStrength(original, rewritten) {
-
-  let score = 0;
-
-  if (original !== rewritten) {
-    score += 1;
-  }
-
-  if (
-    rewritten.split(".").length !==
-    original.split(".").length
-  ) {
-    score += 1;
-  }
-
-  if (
-    rewritten.length >
-    original.length * 0.9
-  ) {
-    score += 1;
-  }
-
-  if (score <= 2) {
-    return "Moderate";
-  }
-
-  if (score <= 4) {
-    return "Strong";
-  }
-
-  return "Very Strong";
 }
 
 function deepHumanize(text, mode) {
