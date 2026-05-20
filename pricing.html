@@ -7,20 +7,179 @@
   <title>Pricing | BestHumanizerAI</title>
 
   <link rel="stylesheet" href="style.css" />
+
+  <style>
+    .pricing-page {
+      max-width: 1150px;
+      margin: 0 auto;
+      padding: 80px 24px;
+    }
+
+    .pricing-hero {
+      text-align: center;
+      margin-bottom: 56px;
+    }
+
+    .pricing-hero h1 {
+      font-size: 44px;
+      line-height: 1.1;
+      margin-bottom: 16px;
+      color: #111827;
+    }
+
+    .pricing-hero p {
+      font-size: 18px;
+      line-height: 1.6;
+      color: #4b5563;
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    .free-note {
+      margin: 0 auto 36px auto;
+      max-width: 760px;
+      padding: 18px 22px;
+      border: 1px solid #e5e7eb;
+      border-radius: 18px;
+      background: #f9fafb;
+      color: #374151;
+      text-align: center;
+      font-size: 16px;
+      line-height: 1.5;
+    }
+
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      align-items: stretch;
+    }
+
+    .pricing-card {
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 24px;
+      padding: 34px 30px;
+      box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+      display: flex;
+      flex-direction: column;
+      min-height: 460px;
+    }
+
+    .pricing-card.featured {
+      border: 2px solid #111827;
+      transform: translateY(-8px);
+    }
+
+    .plan-label {
+      font-size: 14px;
+      font-weight: 700;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 14px;
+    }
+
+    .pricing-card h2 {
+      font-size: 30px;
+      margin: 0 0 12px 0;
+      color: #111827;
+    }
+
+    .plan-description {
+      font-size: 16px;
+      line-height: 1.55;
+      color: #4b5563;
+      min-height: 76px;
+      margin-bottom: 28px;
+    }
+
+    .price {
+      font-size: 42px;
+      font-weight: 800;
+      color: #111827;
+      margin-bottom: 8px;
+    }
+
+    .price span {
+      font-size: 16px;
+      font-weight: 500;
+      color: #6b7280;
+    }
+
+    .plan-limit {
+      font-size: 15px;
+      color: #374151;
+      margin-bottom: 26px;
+      font-weight: 600;
+    }
+
+    .features {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-bottom: 32px;
+      color: #374151;
+      font-size: 15px;
+      line-height: 1.45;
+      flex-grow: 1;
+    }
+
+    .feature {
+      padding-bottom: 14px;
+      border-bottom: 1px solid #f3f4f6;
+    }
+
+    .pricing-button {
+      display: block;
+      width: 100%;
+      text-align: center;
+      text-decoration: none;
+      background: #111827;
+      color: #ffffff;
+      padding: 15px 18px;
+      border-radius: 14px;
+      font-size: 16px;
+      font-weight: 700;
+      transition: 0.2s ease;
+    }
+
+    .pricing-button:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+
+    .pricing-button.secondary {
+      background: #ffffff;
+      color: #111827;
+      border: 1px solid #111827;
+    }
+
+    @media (max-width: 900px) {
+      .pricing-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .pricing-card.featured {
+        transform: none;
+      }
+
+      .pricing-hero h1 {
+        font-size: 36px;
+      }
+    }
+  </style>
 </head>
 
 <body>
 
   <nav class="navbar">
-    <div class="logo">
-      BestHumanizerAI
-    </div>
+    <div class="logo">BestHumanizerAI</div>
 
     <div class="nav-links">
       <a href="index.html">Home</a>
       <a href="tool.html">Humanizer Tool</a>
       <a href="pricing.html">Pricing</a>
-      <a href="about.html">About</a>
       <a href="contact.html">Contact</a>
     </div>
   </nav>
@@ -28,119 +187,86 @@
   <main class="pricing-page">
 
     <section class="pricing-hero">
-      <h1>
-        Simple Pricing
-      </h1>
+      <h1>Choose the plan that fits your writing</h1>
 
       <p>
-        Humanize data-heavy writing without changing the numbers.
+        Humanize data-heavy writing, reports, resumes, and academic work while protecting the numbers, percentages, years, and facts that matter.
       </p>
     </section>
+
+    <div class="free-note">
+      New users can try 3 free rewrites with a character limit. After the free rewrites are used, users will be directed to upgrade.
+    </div>
 
     <section class="pricing-grid">
 
       <div class="pricing-card">
+        <div class="plan-label">Starter</div>
 
-        <h3>Free</h3>
+        <h2>Basic</h2>
 
-        <p class="pricing-description">
-          Perfect for trying the tool before upgrading.
+        <p class="plan-description">
+          Best for everyday rewriting, cleaner sentence flow, and reducing robotic wording.
         </p>
 
-        <ul class="pricing-features">
-          <li>3 total rewrites</li>
-          <li>Basic humanization</li>
-          <li>Number protection</li>
-          <li>Standard rewrite mode</li>
-        </ul>
+        <div class="price">$9<span>/month</span></div>
 
-        <div class="price">
-          $0
+        <div class="plan-limit">Up to 5,000 characters per rewrite</div>
+
+        <div class="features">
+          <div class="feature">Unlimited rewrites</div>
+          <div class="feature">Regular humanizer mode</div>
+          <div class="feature">Number and percentage protection</div>
+          <div class="feature">Cleaner, more natural wording</div>
         </div>
 
-        <button class="pricing-button">
-          Start Free
-        </button>
-
+        <a href="#" class="pricing-button secondary">Choose Basic</a>
       </div>
 
-      <div class="pricing-card featured-card">
+      <div class="pricing-card featured">
+        <div class="plan-label">Most Popular</div>
 
-        <div class="popular-badge">
-          Most Popular
-        </div>
+        <h2>Pro</h2>
 
-        <h3>Basic</h3>
-
-        <p class="pricing-description">
-          For everyday writing and AI detector reduction.
+        <p class="plan-description">
+          Built for students, finance writers, analysts, and business report writing.
         </p>
 
-        <ul class="pricing-features">
-          <li>5,000 character limit</li>
-          <li>Unlimited rewrites</li>
-          <li>Data-safe protection</li>
-          <li>Cleaner sentence restructuring</li>
-        </ul>
+        <div class="price">$19<span>/month</span></div>
 
-        <div class="price">
-          $9<span>/month</span>
+        <div class="plan-limit">Up to 15,000 characters per rewrite</div>
+
+        <div class="features">
+          <div class="feature">Unlimited rewrites</div>
+          <div class="feature">Academic humanizer mode</div>
+          <div class="feature">Business report mode</div>
+          <div class="feature">Resume and job writing mode</div>
         </div>
 
-        <button class="pricing-button">
-          Upgrade
-        </button>
-
+        <a href="#" class="pricing-button">Choose Pro</a>
       </div>
 
       <div class="pricing-card">
+        <div class="plan-label">Advanced</div>
 
-        <h3>Pro</h3>
+        <h2>Premium</h2>
 
-        <p class="pricing-description">
-          Best for academic, finance, and business writing.
+        <p class="plan-description">
+          Best for longer reports, bigger projects, and advanced writing workflows.
         </p>
 
-        <ul class="pricing-features">
-          <li>15,000 character limit</li>
-          <li>Academic mode</li>
-          <li>Business report mode</li>
-          <li>Resume/job rewrite mode</li>
-        </ul>
+        <div class="price">$39<span>/month</span></div>
 
-        <div class="price">
-          $19<span>/month</span>
+        <div class="plan-limit">Longer reports and advanced limits</div>
+
+        <div class="features">
+          <div class="feature">Everything in Pro</div>
+          <div class="feature">Long-form report rewriting</div>
+          <div class="feature">Saved project support</div>
+          <div class="feature">Future Excel and table interpretation</div>
         </div>
 
-        <button class="pricing-button">
-          Go Pro
-        </button>
-
-      </div>
-
-      <div class="pricing-card">
-
-        <h3>Premium</h3>
-
-        <p class="pricing-description">
-          Built for large reports, projects, and advanced workflows.
-        </p>
-
-        <ul class="pricing-features">
-          <li>Long-form reports</li>
-          <li>Saved projects</li>
-          <li>Advanced humanization</li>
-          <li>Future Excel/table interpretation</li>
-        </ul>
-
-        <div class="price">
-          $39<span>/month</span>
-        </div>
-
-        <button class="pricing-button">
-          Get Premium
-        </button>
-
+        <a href="#" class="pricing-button secondary">Choose Premium</a>
       </div>
 
     </section>
