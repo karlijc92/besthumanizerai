@@ -187,7 +187,7 @@ function humanizeText() {
 
   let humanized = input;
 
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < 5; i++) {
     humanized =
       deepHumanize(humanized, rewriteMode);
   }
@@ -229,22 +229,16 @@ function deepHumanize(text, mode) {
     text.replace(/\s+/g, " ").trim();
 
   const replacements = [
-    ["reported revenue growth", "saw stronger revenue performance"],
-    ["Operating expenses rose", "Operating costs moved higher"],
-    ["net income improved", "profitability still improved"],
-    ["Customer retention increased", "Customer retention became stronger"],
-    ["average order value climbed", "average order value moved upward"],
-    ["reduced fulfillment time", "shortened fulfillment timelines"],
-    ["lowered customer acquisition costs", "reduced customer acquisition spending"],
-    ["therefore", "because of this"],
-    ["however", "still"],
-    ["in addition", "also"],
-    ["overall", "looking at the full picture"],
+    ["reported revenue growth", "experienced stronger revenue performance"],
+    ["Operating expenses rose", "Operating costs increased"],
+    ["net income improved", "profitability improved"],
+    ["Customer retention increased", "customer retention became stronger"],
+    ["average order value climbed", "average order value moved higher"],
     ["demonstrates", "shows"],
-    ["significant", "fairly meaningful"],
-    ["during the same period", "around that same time"],
-    ["management stated", "management noted"],
-    ["primarily", "mostly"]
+    ["significant", "meaningful"],
+    ["primarily", "mostly"],
+    ["however", "still"],
+    ["therefore", "because of this"]
   ];
 
   replacements.forEach(pair => {
@@ -262,82 +256,21 @@ function deepHumanize(text, mode) {
       .map(sentence => sentence.trim())
       .filter(Boolean);
 
-  const availableStarters = [
-    "What stands out is that",
-    "At the same time,",
-    "Another thing worth noting is that",
-    "Interestingly,",
-    "From a broader perspective,",
-    "The bigger picture here is that",
-    "One detail that matters is that",
-    "An important point is that",
-    "Looking deeper into the data,"
-  ];
+  sentences = sentences.map(sentence => {
 
-  let usedStarters = [];
+    if (sentence.length > 120) {
 
-  sentences = sentences.map((sentence, index) => {
+      sentence =
+        sentence.replace(/, while/gi, ". Meanwhile,");
 
-    if (sentence.length < 15) {
-      return sentence;
+      sentence =
+        sentence.replace(/, and/gi, ". In addition,");
+
+      sentence =
+        sentence.replace(/, because/gi, ". This occurred because");
     }
 
-    if (index % 2 === 0) {
-
-      let possibleStarters =
-        availableStarters.filter(
-          starter =>
-            !usedStarters.includes(starter)
-        );
-
-      if (possibleStarters.length === 0) {
-
-        usedStarters = [];
-        possibleStarters = availableStarters;
-      }
-
-      const randomStarter =
-        possibleStarters[
-          Math.floor(
-            Math.random() *
-            possibleStarters.length
-          )
-        ];
-
-      usedStarters.push(randomStarter);
-
-      sentence =
-        randomStarter +
-        " " +
-        sentence.charAt(0).toLowerCase() +
-        sentence.slice(1);
-    }
-
-    if (
-      sentence.length > 115 &&
-      Math.random() > 0.35
-    ) {
-
-      sentence =
-        sentence.replace(
-          /, while/gi,
-          ". Meanwhile,"
-        );
-
-      sentence =
-        sentence.replace(
-          /, and/gi,
-          ". Also,"
-        );
-
-      sentence =
-        sentence.replace(
-          /, because/gi,
-          ". This happened because"
-        );
-    }
-
-    if (Math.random() > 0.55) {
+    if (Math.random() > 0.45) {
 
       sentence =
         sentence.replace(
@@ -346,7 +279,7 @@ function deepHumanize(text, mode) {
         );
     }
 
-    if (Math.random() > 0.7) {
+    if (Math.random() > 0.6) {
 
       sentence =
         sentence.replace(
@@ -359,20 +292,28 @@ function deepHumanize(text, mode) {
 
   });
 
-  if (sentences.length > 3) {
+  if (sentences.length > 4) {
 
-    const moved =
+    const movedFirst =
       sentences.splice(0, 1)[0];
 
-    sentences.splice(2, 0, moved);
+    sentences.splice(3, 0, movedFirst);
   }
 
   if (sentences.length > 5) {
 
     const movedSecond =
-      sentences.splice(4, 1)[0];
+      sentences.splice(2, 1)[0];
 
-    sentences.splice(1, 0, movedSecond);
+    sentences.push(movedSecond);
+  }
+
+  if (sentences.length > 6) {
+
+    const movedThird =
+      sentences.splice(1, 1)[0];
+
+    sentences.splice(4, 0, movedThird);
   }
 
   rewritten =
@@ -385,14 +326,8 @@ function deepHumanize(text, mode) {
 
     rewritten =
       rewritten.replace(
-        /Interestingly,/gi,
-        "Importantly,"
-      );
-
-    rewritten =
-      rewritten.replace(
-        /What stands out is that/gi,
-        "The findings suggest that"
+        /\bshows\b/gi,
+        "illustrates"
       );
   }
 
@@ -400,14 +335,8 @@ function deepHumanize(text, mode) {
 
     rewritten =
       rewritten.replace(
-        /What stands out is that/gi,
-        "From a business standpoint,"
-      );
-
-    rewritten =
-      rewritten.replace(
-        /The bigger picture here is that/gi,
-        "From an operational perspective,"
+        /\bimproved\b/gi,
+        "strengthened"
       );
   }
 
@@ -415,23 +344,8 @@ function deepHumanize(text, mode) {
 
     rewritten =
       rewritten.replace(
-        /\bthe business\b/gi,
-        "the organization"
-      );
-
-    rewritten =
-      rewritten.replace(
         /\bthe company\b/gi,
         "the organization"
-      );
-  }
-
-  if (mode === "data-safe") {
-
-    rewritten =
-      rewritten.replace(
-        /Interestingly,/gi,
-        "Notably,"
       );
   }
 
