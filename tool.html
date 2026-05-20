@@ -34,6 +34,16 @@
 
   <div class="pricing-box">
 
+    <div class="usage-box">
+      <p id="rewriteCounter">
+        Free rewrites remaining: 3
+      </p>
+
+      <p id="characterCounter">
+        0 / 1,000 characters
+      </p>
+    </div>
+
     <h2>Choose Rewrite Mode</h2>
 
     <select id="rewriteMode">
@@ -51,13 +61,16 @@
     <textarea
       id="inputText"
       placeholder="Paste your paragraph here..."
+      oninput="updateUsageDisplay()"
     ></textarea>
 
     <br><br>
 
-    <button onclick="humanizeText()">
+    <button onclick="humanizeText()" id="humanizeButton">
       Humanize Text
     </button>
+
+    <div id="upgradeMessage" class="upgrade-message"></div>
 
     <h2>Output</h2>
 
