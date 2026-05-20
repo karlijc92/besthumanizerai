@@ -89,10 +89,16 @@ function deepHumanize(text, mode) {
     "The bigger picture here is that",
     "One detail that matters is that",
     "An important point is that",
-    "Looking deeper into the data,"
+    "Looking deeper into the data,",
+    "From another angle,",
+    "One trend becoming clearer is that",
+    "What becomes noticeable is that",
+    "A key takeaway here is that",
+    "One thing the data suggests is that",
+    "Looking at the trend overall,"
   ];
 
-  let usedStarters = [];
+  let recentStarters = [];
 
   sentences = sentences.map((sentence, index) => {
 
@@ -100,15 +106,20 @@ function deepHumanize(text, mode) {
       return sentence;
     }
 
-    if (index % 2 === 0) {
+    const shouldAddStarter =
+      index !== 0 &&
+      sentence.length > 45 &&
+      Math.random() > 0.45;
+
+    if (shouldAddStarter) {
 
       let possibleStarters =
         availableStarters.filter(
-          starter => !usedStarters.includes(starter)
+          starter => !recentStarters.includes(starter)
         );
 
       if (possibleStarters.length === 0) {
-        usedStarters = [];
+        recentStarters = [];
         possibleStarters = availableStarters;
       }
 
@@ -119,7 +130,11 @@ function deepHumanize(text, mode) {
           )
         ];
 
-      usedStarters.push(randomStarter);
+      recentStarters.push(randomStarter);
+
+      if (recentStarters.length > 4) {
+        recentStarters.shift();
+      }
 
       sentence =
         randomStarter +
@@ -130,7 +145,7 @@ function deepHumanize(text, mode) {
 
     if (
       sentence.length > 115 &&
-      Math.random() > 0.35
+      Math.random() > 0.4
     ) {
 
       sentence =
@@ -142,13 +157,13 @@ function deepHumanize(text, mode) {
       sentence =
         sentence.replace(
           /, and/gi,
-          ". Also,"
+          ". Additionally,"
         );
 
       sentence =
         sentence.replace(
           /, because/gi,
-          ". This happened because"
+          ". This occurred because"
         );
     }
 
@@ -161,7 +176,7 @@ function deepHumanize(text, mode) {
         );
     }
 
-    if (Math.random() > 0.7) {
+    if (Math.random() > 0.72) {
 
       sentence =
         sentence.replace(
@@ -170,11 +185,29 @@ function deepHumanize(text, mode) {
         );
     }
 
+    if (Math.random() > 0.65) {
+
+      sentence =
+        sentence.replace(
+          /\bshows\b/gi,
+          "illustrates"
+        );
+    }
+
+    if (Math.random() > 0.65) {
+
+      sentence =
+        sentence.replace(
+          /\bimportant\b/gi,
+          "notable"
+        );
+    }
+
     return sentence;
 
   });
 
-  if (sentences.length > 3) {
+  if (sentences.length > 4 && Math.random() > 0.4) {
 
     const moved =
       sentences.splice(0, 1)[0];
@@ -182,7 +215,7 @@ function deepHumanize(text, mode) {
     sentences.splice(2, 0, moved);
   }
 
-  if (sentences.length > 5) {
+  if (sentences.length > 6 && Math.random() > 0.5) {
 
     const movedSecond =
       sentences.splice(4, 1)[0];
