@@ -56,7 +56,7 @@ function aggressiveHumanize(text, mode) {
       sentence = sentence.replace(/, which/gi, ". This also");
     }
 
-    if (index !== 0 && Math.random() > 0.58) {
+    if (index !== 0 && Math.random() > 0.48) {
       let available = softStarters.filter(starter => !usedStarters.includes(starter));
 
       if (available.length === 0) {
@@ -68,6 +68,16 @@ function aggressiveHumanize(text, mode) {
       usedStarters.push(starter);
 
       sentence = starter + " " + sentence.charAt(0).toLowerCase() + sentence.slice(1);
+    }
+
+    if (sentence.length > 120 && Math.random() > 0.35) {
+      const words = sentence.split(" ");
+      const midpoint = Math.floor(words.length / 2);
+
+      sentence =
+        words.slice(0, midpoint).join(" ") +
+        ". " +
+        words.slice(midpoint).join(" ");
     }
 
     return sentence;
