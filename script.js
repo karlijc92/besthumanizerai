@@ -1,4 +1,4 @@
-const FREE_REWRITE_LIMIT = 3;
+const FREE_REWRITE_LIMIT = 30;
 const FREE_CHARACTER_LIMIT = 1000;
 
 const BASIC_LINK = "https://buy.stripe.com/6oU28sc8J50m6GG0RpeME0j";
