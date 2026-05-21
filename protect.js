@@ -6,18 +6,21 @@ function extractProtectedData(text) {
   const patterns = [
     /\$?\d+(?:,\d{3})*(?:\.\d+)?\s?(?:billion|million|thousand|trillion)?/gi,
     /\d+(?:\.\d+)?%/g,
-    /\d{4}/g,
-    /\b[A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*\b/g,
-    /\([A-Za-z]+,\s?\d{4}\)/g
+    /\b(?:19|20)\d{2}\b/g,
+    /\bQ[1-4]\s?(?:19|20)\d{2}\b/gi,
+    /\([A-Za-z]+,\s?(?:19|20)\d{2}\)/g,
+    /\b\d+(?:\.\d+)?\s?(?:to|-|–)\s?\$?\d+(?:\.\d+)?\s?(?:billion|million|thousand|trillion)?/gi
   ];
 
   const protectedItems = [];
 
   patterns.forEach((pattern) => {
     const matches = text.match(pattern);
+
     if (matches) {
       matches.forEach((match) => {
         const cleanMatch = match.trim();
+
         if (cleanMatch && !protectedItems.includes(cleanMatch)) {
           protectedItems.push(cleanMatch);
         }
@@ -28,17 +31,24 @@ function extractProtectedData(text) {
   return protectedItems;
 }
 
-function compareProtectedData(originalText, rewrittenText) {
-  const originalItems = extractProtectedData(originalText);
-  const rewrittenItems = extractProtectedData(rewrittenText);
+function normalizeProtectedValue(value) {
+  return value
+    .replace(/\s+/g, " ")
+    .replace(/\s+%/g, "%")
+    .replace(/\$\s+/g, "$")
+    .trim();
+}
 
-  const missingItems = originalItems.filter(
-    (item) => !rewrittenText.includes(item)
-  );
+function compareProtectedData(originalText, rewrittenText) {
+  const originalItems = extractProtectedData(originalText).map(normalizeProtectedValue);
+  const normalizedRewrite = normalizeProtectedValue(rewrittenText);
+
+  const missingItems = originalItems.filter((item) => {
+    return !normalizedRewrite.includes(item);
+  });
 
   return {
     originalItems,
-    rewrittenItems,
     missingItems,
     isDataSafe: missingItems.length === 0
   };
