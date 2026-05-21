@@ -29,104 +29,186 @@ function updateUsageDisplay() {
   const currentCount = parseInt(localStorage.getItem("freeRewriteCount") || "0");
   const remaining = FREE_REWRITE_LIMIT - currentCount;
 
-  rewriteCounter.innerText = `Free rewrites remaining: ${Math.max(remaining, 0)}`;
-  characterCounter.innerText = `${input.value.length.toLocaleString()} / ${FREE_CHARACTER_LIMIT.toLocaleString()} characters`;
+  rewriteCounter.innerText =
+    `Free rewrites remaining: ${Math.max(remaining, 0)}`;
+
+  characterCounter.innerText =
+    `${input.value.length.toLocaleString()} / ${FREE_CHARACTER_LIMIT.toLocaleString()} characters`;
 }
 
 function renderUpgradeOptions(title, description) {
   return `
     <div style="margin-top:24px;padding:24px;border-radius:20px;background:#ffffff;border:1px solid #e5e7eb;box-shadow:0 12px 35px rgba(15,23,42,0.08);">
       <h3 style="margin-bottom:12px;color:#111827;font-size:28px;">${title}</h3>
-      <p style="color:#4b5563;line-height:1.7;margin-bottom:24px;">${description}</p>
+
+      <p style="color:#4b5563;line-height:1.7;margin-bottom:24px;">
+        ${description}
+      </p>
 
       <div style="display:grid;gap:16px;">
-        <a href="${BASIC_LINK}" style="display:block;text-decoration:none;padding:16px 18px;border-radius:14px;border:1px solid #d1d5db;color:#111827;background:#f9fafb;">
+
+        <a href="${BASIC_LINK}"
+          style="display:block;text-decoration:none;padding:16px 18px;border-radius:14px;border:1px solid #d1d5db;color:#111827;background:#f9fafb;">
           <strong>$9/month — Basic</strong><br>
           50 rewrites/month • 5,000 characters
         </a>
 
-        <a href="${PRO_LINK}" style="display:block;text-decoration:none;padding:16px 18px;border-radius:14px;border:2px solid #111827;color:#111827;background:#ffffff;">
+        <a href="${PRO_LINK}"
+          style="display:block;text-decoration:none;padding:16px 18px;border-radius:14px;border:2px solid #111827;color:#111827;background:#ffffff;">
           <strong>$19/month — Pro</strong><br>
           250 rewrites/month • 15,000 characters
         </a>
 
-        <a href="${PREMIUM_LINK}" style="display:block;text-decoration:none;padding:16px 18px;border-radius:14px;border:1px solid #d1d5db;color:#111827;background:#f9fafb;">
+        <a href="${PREMIUM_LINK}"
+          style="display:block;text-decoration:none;padding:16px 18px;border-radius:14px;border:1px solid #d1d5db;color:#111827;background:#f9fafb;">
           <strong>$39/month — Premium</strong><br>
           Unlimited rewrites • Long-form support
         </a>
+
       </div>
     </div>
   `;
 }
 
 function humanizeText() {
-  const input = document.getElementById("inputText").value;
+
+  const inputElement = document.getElementById("inputText");
   const output = document.getElementById("outputText");
   const rewriteMode = document.getElementById("rewriteMode").value;
   const upgradeMessage = document.getElementById("upgradeMessage");
 
-  const currentCount = parseInt(localStorage.getItem("freeRewriteCount") || "0");
+  const currentCount =
+    parseInt(localStorage.getItem("freeRewriteCount") || "0");
+
+  const originalInput =
+    inputElement.value.trim();
 
   if (currentCount >= FREE_REWRITE_LIMIT) {
-    output.innerText = "Free rewrites have been used.";
 
-    upgradeMessage.innerHTML = renderUpgradeOptions(
-      "Upgrade Required",
-      "Your free rewrites have been used. Upgrade now to continue humanizing longer reports, business writing, resumes, and academic work."
-    );
+    output.innerText =
+      "Free rewrites have been used.";
+
+    upgradeMessage.innerHTML =
+      renderUpgradeOptions(
+        "Upgrade Required",
+        "Upgrade for larger rewrites, advanced modes, and long-form humanization."
+      );
 
     return;
   }
 
-  if (input.trim() === "") {
-    output.innerText = "Please paste text first.";
+  if (!originalInput) {
+
+    output.innerText =
+      "Please paste text first.";
+
     return;
   }
 
-  if (input.length > FREE_CHARACTER_LIMIT) {
-    output.innerText = `Free accounts are limited to ${FREE_CHARACTER_LIMIT.toLocaleString()} characters.`;
+  if (originalInput.length > FREE_CHARACTER_LIMIT) {
 
-    upgradeMessage.innerHTML = renderUpgradeOptions(
-      "Need More Characters?",
-      "Upgrade your account for larger rewrites, advanced modes, and higher monthly rewrite limits."
-    );
+    output.innerText =
+      `Free accounts are limited to ${FREE_CHARACTER_LIMIT.toLocaleString()} characters.`;
+
+    upgradeMessage.innerHTML =
+      renderUpgradeOptions(
+        "Need More Characters?",
+        "Upgrade your account for larger rewrites and advanced rewrite modes."
+      );
 
     return;
   }
 
   upgradeMessage.innerHTML = "";
 
-  const sourceText = input;
+  const protectedValues =
+    protectCriticalData(originalInput);
 
-  const originalNumbers =
-    input.match(/[\d]+(?:,\d{3})*(?:\.\d+)?%?/g) || [];
-
-  let humanized = sourceText;
+  let workingText =
+    protectedValues.text;
 
   for (let i = 0; i < 4; i++) {
-    humanized = deepHumanize(humanized, rewriteMode);
+    workingText =
+      deepHumanize(workingText, rewriteMode);
   }
 
-  const newNumbers =
-    humanized.match(/[\d]+(?:,\d{3})*(?:\.\d+)?%?/g) || [];
+  workingText =
+    restoreCriticalData(
+      workingText,
+      protectedValues.map
+    );
 
-  const originalSorted = [...originalNumbers].sort();
-  const newSorted = [...newNumbers].sort();
+  workingText =
+    cleanupRepetition(workingText);
 
-  let warningText = "";
-
-  if (JSON.stringify(originalSorted) !== JSON.stringify(newSorted)) {
-    warningText =
-      "⚠ Possible number mismatch detected.\n\n";
-  }
-
-  lastHumanizedText = humanized;
+  lastHumanizedText =
+    workingText;
 
   output.innerText =
-    warningText + humanized;
+    workingText;
 
-  localStorage.setItem("freeRewriteCount", String(currentCount + 1));
+  localStorage.setItem(
+    "freeRewriteCount",
+    String(currentCount + 1)
+  );
+
   updateUsageDisplay();
+}
+
+function protectCriticalData(text) {
+
+  const protectedMap = [];
+
+  let protectedText = text;
+
+  const patterns = [
+
+    /\$?\d+(?:,\d{3})*(?:\.\d+)?%?/g,
+
+    /\b(?:19|20)\d{2}\b/g,
+
+    /\b[A-Z]{2,5}\b/g,
+
+    /\([A-Za-z]+,\s?\d{4}\)/g
+  ];
+
+  patterns.forEach(pattern => {
+
+    protectedText =
+      protectedText.replace(pattern, match => {
+
+        const token =
+          `__PROTECTED_${protectedMap.length}__`;
+
+        protectedMap.push({
+          token,
+          value: match
+        });
+
+        return token;
+      });
+  });
+
+  return {
+    text: protectedText,
+    map: protectedMap
+  };
+}
+
+function restoreCriticalData(text, protectedMap) {
+
+  let restored = text;
+
+  protectedMap.forEach(item => {
+
+    restored =
+      restored.replaceAll(
+        item.token,
+        item.value
+      );
+  });
+
+  return restored;
 }
 
 function deepHumanize(text, mode) {
@@ -134,26 +216,23 @@ function deepHumanize(text, mode) {
   let rewritten =
     text.replace(/\s+/g, " ").trim();
 
-  const replacements = [
-    ["reported revenue growth", "saw stronger revenue performance"],
-    ["Operating expenses rose", "Operating costs moved higher"],
-    ["net income improved", "profitability still improved"],
-    ["Customer retention increased", "Customer retention became stronger"],
-    ["average order value climbed", "average order value moved upward"],
-    ["reduced fulfillment time", "shortened fulfillment timelines"],
-    ["lowered customer acquisition costs", "reduced customer acquisition spending"],
+  const phraseSwaps = [
+
+    ["reported", "showed"],
+    ["demonstrates", "shows"],
+    ["significant", "meaningful"],
     ["therefore", "because of this"],
     ["however", "still"],
     ["in addition", "also"],
     ["overall", "looking at the full picture"],
-    ["demonstrates", "shows"],
-    ["significant", "fairly meaningful"],
-    ["during the same period", "around that same time"],
     ["management stated", "management noted"],
-    ["primarily", "mostly"]
+    ["primarily", "mostly"],
+    ["increased", "moved higher"],
+    ["decreased", "moved lower"],
+    ["the company", "the business"]
   ];
 
-  replacements.forEach(pair => {
+  phraseSwaps.forEach(pair => {
 
     rewritten =
       rewritten.replace(
@@ -165,117 +244,93 @@ function deepHumanize(text, mode) {
   let sentences =
     rewritten
       .split(/(?<=[.!?])\s+/)
-      .map(sentence => sentence.trim())
+      .map(s => s.trim())
       .filter(Boolean);
 
-  const availableStarters = [
-    "What stands out is that",
-    "At the same time,",
-    "Another thing worth noting is that",
-    "Interestingly,",
-    "From a broader perspective,",
-    "The bigger picture here is that",
-    "One detail that matters is that",
-    "An important point is that",
-    "Looking deeper into the data,"
+  const starters = [
+
+    "One important point is that",
+    "Looking at the broader picture,",
+    "Another detail worth noticing is that",
+    "From a practical standpoint,",
+    "What becomes clear here is that",
+    "A key takeaway is that"
   ];
 
   let usedStarters = [];
 
-  sentences = sentences.map((sentence, index) => {
+  sentences =
+    sentences.map((sentence, index) => {
 
-    if (sentence.length < 15) {
-      return sentence;
-    }
-
-    if (index % 2 === 0) {
-
-      let possibleStarters =
-        availableStarters.filter(
-          starter => !usedStarters.includes(starter)
-        );
-
-      if (possibleStarters.length === 0) {
-        usedStarters = [];
-        possibleStarters = availableStarters;
+      if (sentence.length < 25) {
+        return sentence;
       }
 
-      const randomStarter =
-        possibleStarters[
-          Math.floor(
-            Math.random() * possibleStarters.length
-          )
-        ];
+      if (
+        index !== 0 &&
+        Math.random() > 0.55
+      ) {
 
-      usedStarters.push(randomStarter);
+        let available =
+          starters.filter(
+            starter =>
+              !usedStarters.includes(starter)
+          );
 
-      sentence =
-        randomStarter +
-        " " +
-        sentence.charAt(0).toLowerCase() +
-        sentence.slice(1);
-    }
+        if (available.length === 0) {
+          usedStarters = [];
+          available = starters;
+        }
 
-    if (
-      sentence.length > 115 &&
-      Math.random() > 0.35
-    ) {
+        const chosen =
+          available[
+            Math.floor(
+              Math.random() * available.length
+            )
+          ];
 
-      sentence =
-        sentence.replace(
-          /, while/gi,
-          ". Meanwhile,"
-        );
+        usedStarters.push(chosen);
 
-      sentence =
-        sentence.replace(
-          /, and/gi,
-          ". Also,"
-        );
+        sentence =
+          chosen +
+          " " +
+          sentence.charAt(0).toLowerCase() +
+          sentence.slice(1);
+      }
 
-      sentence =
-        sentence.replace(
-          /, because/gi,
-          ". This happened because"
-        );
-    }
+      if (
+        sentence.length > 140 &&
+        Math.random() > 0.4
+      ) {
 
-    if (Math.random() > 0.55) {
+        sentence =
+          sentence.replace(
+            /, while/gi,
+            ". Meanwhile,"
+          );
 
-      sentence =
-        sentence.replace(
-          /\bthe company\b/gi,
-          "the business"
-        );
-    }
+        sentence =
+          sentence.replace(
+            /, because/gi,
+            ". This happened because"
+          );
 
-    if (Math.random() > 0.7) {
+        sentence =
+          sentence.replace(
+            /, and/gi,
+            ". Also,"
+          );
+      }
 
-      sentence =
-        sentence.replace(
-          /\bthe business\b/gi,
-          "the organization"
-        );
-    }
+      return sentence;
+    });
 
-    return sentence;
+  if (sentences.length > 4) {
 
-  });
-
-  if (sentences.length > 3) {
-
-    const moved =
+    const movedSentence =
       sentences.splice(0, 1)[0];
 
-    sentences.splice(2, 0, moved);
-  }
-
-  if (sentences.length > 5) {
-
-    const movedSecond =
-      sentences.splice(4, 1)[0];
-
-    sentences.splice(1, 0, movedSecond);
+    sentences.splice(2, 0, movedSentence);
   }
 
   rewritten =
@@ -288,13 +343,13 @@ function deepHumanize(text, mode) {
 
     rewritten =
       rewritten.replace(
-        /Interestingly,/gi,
+        /Looking at the broader picture,/gi,
         "Importantly,"
       );
 
     rewritten =
       rewritten.replace(
-        /What stands out is that/gi,
+        /A key takeaway is that/gi,
         "The findings suggest that"
       );
   }
@@ -303,14 +358,8 @@ function deepHumanize(text, mode) {
 
     rewritten =
       rewritten.replace(
-        /What stands out is that/gi,
+        /What becomes clear here is that/gi,
         "From a business standpoint,"
-      );
-
-    rewritten =
-      rewritten.replace(
-        /The bigger picture here is that/gi,
-        "From an operational perspective,"
       );
   }
 
@@ -321,22 +370,59 @@ function deepHumanize(text, mode) {
         /\bthe business\b/gi,
         "the organization"
       );
-
-    rewritten =
-      rewritten.replace(
-        /\bthe company\b/gi,
-        "the organization"
-      );
   }
 
   if (mode === "data-safe") {
 
     rewritten =
       rewritten.replace(
-        /Interestingly,/gi,
+        /A key takeaway is that/gi,
         "Notably,"
       );
   }
 
   return rewritten;
+}
+
+function cleanupRepetition(text) {
+
+  const repetitivePhrases = [
+
+    "Looking at the broader picture,",
+    "One important point is that",
+    "Another detail worth noticing is that",
+    "What becomes clear here is that",
+    "A key takeaway is that",
+    "From a practical standpoint,"
+  ];
+
+  let cleaned = text;
+
+  repetitivePhrases.forEach(phrase => {
+
+    const regex =
+      new RegExp(
+        phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
+        "gi"
+      );
+
+    let count = 0;
+
+    cleaned =
+      cleaned.replace(regex, match => {
+
+        count++;
+
+        if (count > 1) {
+          return "";
+        }
+
+        return match;
+      });
+  });
+
+  cleaned =
+    cleaned.replace(/\s+/g, " ").trim();
+
+  return cleaned;
 }
