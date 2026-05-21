@@ -97,11 +97,7 @@ function humanizeText() {
 
   upgradeMessage.innerHTML = "";
 
-  const sourceText = lastHumanizedText && originalInput === lastHumanizedText
-    ? lastHumanizedText
-    : originalInput;
-
-  const protectedData = protectData(sourceText);
+  const protectedData = protectData(originalInput);
 
   let humanized = protectedData.text;
 
@@ -122,14 +118,14 @@ function humanizeText() {
 function protectData(text) {
   const items = [];
 
-  let protectedText = text.replace(
-    /\$?\d+(?:,\d{3})*(?:\.\d+)?%?|\b(?:19|20)\d{2}\b|\([A-Za-z]+,\s?\d{4}\)/g,
-    function(match) {
-      const token = `__DATA_${items.length}__`;
-      items.push({ token, value: match });
-      return token;
-    }
-  );
+  const dataPattern =
+    /\$?\d+(?:,\d{3})*(?:\.\d+)?\s?(?:billion|million|thousand|trillion)?%?|\b(?:19|20)\d{2}\b|\([A-Za-z]+,\s?\d{4}\)/gi;
+
+  const protectedText = text.replace(dataPattern, function(match) {
+    const token = `__DATA_${items.length}__`;
+    items.push({ token, value: match });
+    return token;
+  });
 
   return {
     text: protectedText,
@@ -205,7 +201,7 @@ function aggressiveHumanize(text, mode) {
       sentence = sentence.replace(/, which/gi, ". This also");
     }
 
-    if (index !== 0 && Math.random() > 0.48) {
+    if (index !== 0 && Math.random() > 0.58) {
       let available = softStarters.filter(starter => !usedStarters.includes(starter));
 
       if (available.length === 0) {
@@ -217,16 +213,6 @@ function aggressiveHumanize(text, mode) {
       usedStarters.push(starter);
 
       sentence = starter + " " + sentence.charAt(0).toLowerCase() + sentence.slice(1);
-    }
-
-    if (sentence.length > 120 && Math.random() > 0.35) {
-      const words = sentence.split(" ");
-      const midpoint = Math.floor(words.length / 2);
-
-      sentence =
-        words.slice(0, midpoint).join(" ") +
-        ". " +
-        words.slice(midpoint).join(" ");
     }
 
     return sentence;
@@ -269,6 +255,29 @@ function aggressiveHumanize(text, mode) {
 function cleanFinalText(text) {
   let cleaned = text;
 
+  const stackedPatterns = [
+    {
+      pattern: /What stands out is that\s+one detail that matters is that/gi,
+      replacement: "What stands out is that"
+    },
+    {
+      pattern: /What stands out is that\s+another point worth noting is that/gi,
+      replacement: "Another point worth noting is that"
+    },
+    {
+      pattern: /Looking at the numbers,\s+a closer look shows that/gi,
+      replacement: "A closer look shows that"
+    },
+    {
+      pattern: /At the same time,\s+from a practical standpoint,/gi,
+      replacement: "At the same time,"
+    }
+  ];
+
+  stackedPatterns.forEach(item => {
+    cleaned = cleaned.replace(item.pattern, item.replacement);
+  });
+
   const repeatedPhrases = [
     "What stands out is that",
     "Looking at the numbers,",
@@ -307,6 +316,7 @@ function cleanFinalText(text) {
   cleaned = cleaned.replace(/\s+,/g, ",");
   cleaned = cleaned.replace(/\s+\./g, ".");
   cleaned = cleaned.replace(/,\s*,/g, ",");
+  cleaned = cleaned.replace(/\s+%/g, "%");
 
   return cleaned;
 }
