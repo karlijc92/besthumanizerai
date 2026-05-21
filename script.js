@@ -10,7 +10,6 @@ let lastHumanizedText = "";
 initializeUsage();
 
 function initializeUsage() {
-
   if (!localStorage.getItem("freeRewriteCount")) {
     localStorage.setItem("freeRewriteCount", "0");
   }
@@ -19,40 +18,24 @@ function initializeUsage() {
 }
 
 function updateUsageDisplay() {
-
-  const input =
-    document.getElementById("inputText");
-
-  const rewriteCounter =
-    document.getElementById("rewriteCounter");
-
-  const characterCounter =
-    document.getElementById("characterCounter");
+  const input = document.getElementById("inputText");
+  const rewriteCounter = document.getElementById("rewriteCounter");
+  const characterCounter = document.getElementById("characterCounter");
 
   if (!input || !rewriteCounter || !characterCounter) {
     return;
   }
 
-  const currentCount =
-    parseInt(
-      localStorage.getItem("freeRewriteCount") || "0"
-    );
+  const currentCount = parseInt(localStorage.getItem("freeRewriteCount") || "0");
+  const remaining = FREE_REWRITE_LIMIT - currentCount;
 
-  const remaining =
-    FREE_REWRITE_LIMIT - currentCount;
-
-  rewriteCounter.innerText =
-    `Free rewrites remaining: ${Math.max(remaining, 0)}`;
-
-  characterCounter.innerText =
-    `${input.value.length.toLocaleString()} / ${FREE_CHARACTER_LIMIT.toLocaleString()} characters`;
+  rewriteCounter.innerText = `Free rewrites remaining: ${Math.max(remaining, 0)}`;
+  characterCounter.innerText = `${input.value.length.toLocaleString()} / ${FREE_CHARACTER_LIMIT.toLocaleString()} characters`;
 }
 
 function renderUpgradeOptions(title, description) {
-
   return `
     <div style="margin-top:24px;padding:24px;border-radius:20px;background:#ffffff;border:1px solid #e5e7eb;box-shadow:0 12px 35px rgba(15,23,42,0.08);">
-
       <h3 style="margin-bottom:12px;color:#111827;font-size:28px;">
         ${title}
       </h3>
@@ -62,50 +45,41 @@ function renderUpgradeOptions(title, description) {
       </p>
 
       <div style="display:grid;gap:16px;">
-
-        <a href="${BASIC_LINK}"
-          style="display:block;text-decoration:none;padding:16px 18px;border-radius:14px;border:1px solid #d1d5db;color:#111827;background:#f9fafb;">
+        <a href="${BASIC_LINK}" style="display:block;text-decoration:none;padding:16px 18px;border-radius:14px;border:1px solid #d1d5db;color:#111827;background:#f9fafb;">
           <strong>$9/month — Basic</strong><br>
           50 rewrites/month • 5,000 characters
         </a>
 
-        <a href="${PRO_LINK}"
-          style="display:block;text-decoration:none;padding:16px 18px;border-radius:14px;border:2px solid #111827;color:#111827;background:#ffffff;">
+        <a href="${PRO_LINK}" style="display:block;text-decoration:none;padding:16px 18px;border-radius:14px;border:2px solid #111827;color:#111827;background:#ffffff;">
           <strong>$19/month — Pro</strong><br>
           250 rewrites/month • 15,000 characters
         </a>
 
-        <a href="${PREMIUM_LINK}"
-          style="display:block;text-decoration:none;padding:16px 18px;border-radius:14px;border:1px solid #d1d5db;color:#111827;background:#f9fafb;">
+        <a href="${PREMIUM_LINK}" style="display:block;text-decoration:none;padding:16px 18px;border-radius:14px;border:1px solid #d1d5db;color:#111827;background:#f9fafb;">
           <strong>$39/month — Premium</strong><br>
           Unlimited rewrites • Long-form support
         </a>
-
       </div>
     </div>
   `;
 }
 
-function protectData(text) {
-
+function protectDataBeforeRewrite(text) {
   const items = [];
 
   const dataPattern =
     /\$?\d+(?:,\d{3})*(?:\.\d+)?\s?(?:billion|million|thousand|trillion)?%?|\b(?:19|20)\d{2}\b|\([A-Za-z]+,\s?\d{4}\)/gi;
 
-  const protectedText =
-    text.replace(dataPattern, function(match) {
+  const protectedText = text.replace(dataPattern, function(match) {
+    const token = `__DATA_${items.length}__`;
 
-      const token =
-        `__DATA_${items.length}__`;
-
-      items.push({
-        token,
-        value: match
-      });
-
-      return token;
+    items.push({
+      token,
+      value: match
     });
+
+    return token;
+  });
 
   return {
     text: protectedText,
@@ -113,183 +87,116 @@ function protectData(text) {
   };
 }
 
-function restoreData(text, items) {
-
-  let restored =
-    text;
+function restoreProtectedData(text, items) {
+  let restored = text;
 
   items.forEach(item => {
-
-    restored =
-      restored.replaceAll(
-        item.token,
-        item.value
-      );
+    restored = restored.replaceAll(item.token, item.value);
   });
 
   return restored;
 }
 
-function cleanFinalText(text) {
+function finalCleanup(text) {
+  let cleaned = text;
 
-  let cleaned =
-    text;
+  if (typeof cleanupHumanizedText === "function") {
+    cleaned = cleanupHumanizedText(cleaned);
+  }
 
-  const repeatedPhrases = [
+  cleaned = cleaned.replace(/\s+/g, " ").trim();
+  cleaned = cleaned.replace(/\.\s+\./g, ".");
+  cleaned = cleaned.replace(/\s+,/g, ",");
+  cleaned = cleaned.replace(/\s+\./g, ".");
+  cleaned = cleaned.replace(/,\s*,/g, ",");
+  cleaned = cleaned.replace(/\s+%/g, "%");
+  cleaned = cleaned.replace(/\$\s+/g, "$");
+  cleaned = cleaned.replace(/(\d)\s+(%)/g, "$1$2");
 
-    "What stands out is that",
-    "Looking at the numbers,",
-    "One detail that matters is that",
-    "The bigger picture is that",
-    "A closer look shows that",
-    "At the same time,",
-    "Another point worth noting is that",
-    "From a practical standpoint,",
-    "From a business standpoint,",
-    "Operationally,",
-    "Notably,"
-  ];
+  return cleaned.trim();
+}
 
-  repeatedPhrases.forEach(phrase => {
+function buildDataWarning(originalText, finalText) {
+  if (typeof compareProtectedData !== "function") {
+    return "";
+  }
 
-    const regex =
-      new RegExp(
-        phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
-        "gi"
-      );
+  const comparison = compareProtectedData(originalText, finalText);
 
-    let count = 0;
+  if (comparison.isDataSafe) {
+    return "";
+  }
 
-    cleaned =
-      cleaned.replace(regex, match => {
+  return `
 
-        count++;
-
-        if (count > 1) {
-          return "";
-        }
-
-        return match;
-      });
-  });
-
-  cleaned =
-    cleaned.replace(/\s+/g, " ").trim();
-
-  cleaned =
-    cleaned.replace(/\.\s+\./g, ".");
-
-  cleaned =
-    cleaned.replace(/\s+,/g, ",");
-
-  cleaned =
-    cleaned.replace(/\s+\./g, ".");
-
-  cleaned =
-    cleaned.replace(/,\s*,/g, ",");
-
-  cleaned =
-    cleaned.replace(/\s+%/g, "%");
-
-  return cleaned;
+DATA CHECK WARNING: Possible number or citation mismatch found. Please review these missing items: ${comparison.missingItems.join(", ")}`;
 }
 
 function humanizeText() {
+  const inputElement = document.getElementById("inputText");
+  const output = document.getElementById("outputText");
+  const rewriteModeElement = document.getElementById("rewriteMode");
+  const upgradeMessage = document.getElementById("upgradeMessage");
 
-  const inputElement =
-    document.getElementById("inputText");
+  if (!inputElement || !output || !rewriteModeElement || !upgradeMessage) {
+    return;
+  }
 
-  const output =
-    document.getElementById("outputText");
+  const rewriteMode = rewriteModeElement.value;
+  const currentCount = parseInt(localStorage.getItem("freeRewriteCount") || "0");
 
-  const rewriteMode =
-    document.getElementById("rewriteMode").value;
-
-  const upgradeMessage =
-    document.getElementById("upgradeMessage");
-
-  const currentCount =
-    parseInt(
-      localStorage.getItem("freeRewriteCount") || "0"
-    );
-
-  const originalInput =
-    inputElement.value.trim();
+  const originalInput = inputElement.value.trim();
 
   if (currentCount >= FREE_REWRITE_LIMIT) {
+    output.innerText = "Free rewrites have been used.";
 
-    output.innerText =
-      "Free rewrites have been used.";
-
-    upgradeMessage.innerHTML =
-      renderUpgradeOptions(
-        "Upgrade Required",
-        "Upgrade for larger rewrites, advanced modes, and long-form humanization."
-      );
+    upgradeMessage.innerHTML = renderUpgradeOptions(
+      "Upgrade Required",
+      "Upgrade for larger rewrites, advanced modes, and long-form humanization."
+    );
 
     return;
   }
 
   if (!originalInput) {
-
-    output.innerText =
-      "Please paste text first.";
-
+    output.innerText = "Please paste text first.";
     return;
   }
 
   if (originalInput.length > FREE_CHARACTER_LIMIT) {
+    output.innerText = `Free accounts are limited to ${FREE_CHARACTER_LIMIT.toLocaleString()} characters.`;
 
-    output.innerText =
-      `Free accounts are limited to ${FREE_CHARACTER_LIMIT.toLocaleString()} characters.`;
-
-    upgradeMessage.innerHTML =
-      renderUpgradeOptions(
-        "Need More Characters?",
-        "Upgrade your account for larger rewrites and advanced rewrite modes."
-      );
+    upgradeMessage.innerHTML = renderUpgradeOptions(
+      "Need More Characters?",
+      "Upgrade your account for larger rewrites and advanced rewrite modes."
+    );
 
     return;
   }
 
   upgradeMessage.innerHTML = "";
 
-  const protectedData =
-    protectData(originalInput);
+  const textToRewrite = lastHumanizedText && inputElement.value.trim() === lastHumanizedText
+    ? lastHumanizedText
+    : originalInput;
 
-  let humanized =
-    protectedData.text;
+  const protectedData = protectDataBeforeRewrite(textToRewrite);
+
+  let humanized = protectedData.text;
 
   for (let i = 0; i < 4; i++) {
-
-    humanized =
-      aggressiveHumanize(
-        humanized,
-        rewriteMode
-      );
+    humanized = aggressiveHumanize(humanized, rewriteMode);
   }
 
-  humanized =
-    restoreData(
-      humanized,
-      protectedData.items
-    );
+  humanized = restoreProtectedData(humanized, protectedData.items);
+  humanized = finalCleanup(humanized);
 
-  humanized =
-    cleanFinalText(
-      humanized
-    );
+  const warning = buildDataWarning(textToRewrite, humanized);
 
-  lastHumanizedText =
-    humanized;
+  lastHumanizedText = humanized;
+  output.innerText = humanized + warning;
 
-  output.innerText =
-    humanized;
-
-  localStorage.setItem(
-    "freeRewriteCount",
-    String(currentCount + 1)
-  );
+  localStorage.setItem("freeRewriteCount", String(currentCount + 1));
 
   updateUsageDisplay();
 }
