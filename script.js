@@ -102,7 +102,7 @@ function humanizeText() {
   let humanized = protectedData.text;
 
   for (let i = 0; i < 4; i++) {
-    humanized = aggressiveHumanize(humanized, rewriteMode);
+    humanized = aggressiveHumanize(humanized, rewriteMode, i);
   }
 
   humanized = restoreData(humanized, protectedData.items);
@@ -143,7 +143,7 @@ function restoreData(text, items) {
   return restored;
 }
 
-function aggressiveHumanize(text, mode) {
+function aggressiveHumanize(text, mode, passNumber) {
   let rewritten = text.replace(/\s+/g, " ").trim();
 
   const replacements = [
@@ -176,7 +176,7 @@ function aggressiveHumanize(text, mode) {
     .map(sentence => sentence.trim())
     .filter(Boolean);
 
-  const softStarters = [
+  const starters = [
     "What stands out is that",
     "Looking at the numbers,",
     "One detail that matters is that",
@@ -187,30 +187,20 @@ function aggressiveHumanize(text, mode) {
     "From a practical standpoint,"
   ];
 
-  let usedStarters = [];
-
   sentences = sentences.map((sentence, index) => {
     if (sentence.length < 20) {
       return sentence;
     }
 
-    if (sentence.length > 95) {
+    if (sentence.length > 95 && passNumber % 2 === 0) {
       sentence = sentence.replace(/, while/gi, ". Meanwhile,");
       sentence = sentence.replace(/, because/gi, ". This happened because");
       sentence = sentence.replace(/, and/gi, ". Also,");
       sentence = sentence.replace(/, which/gi, ". This also");
     }
 
-    if (index !== 0 && Math.random() > 0.58) {
-      let available = softStarters.filter(starter => !usedStarters.includes(starter));
-
-      if (available.length === 0) {
-        available = softStarters;
-        usedStarters = [];
-      }
-
-      const starter = available[Math.floor(Math.random() * available.length)];
-      usedStarters.push(starter);
+    if (index !== 0 && (index + passNumber) % 2 === 0) {
+      const starter = starters[(index + passNumber) % starters.length];
 
       sentence = starter + " " + sentence.charAt(0).toLowerCase() + sentence.slice(1);
     }
@@ -218,12 +208,12 @@ function aggressiveHumanize(text, mode) {
     return sentence;
   });
 
-  if (sentences.length > 3) {
+  if (sentences.length > 3 && passNumber === 1) {
     const first = sentences.splice(0, 1)[0];
     sentences.splice(2, 0, first);
   }
 
-  if (sentences.length > 5) {
+  if (sentences.length > 5 && passNumber === 2) {
     const fifth = sentences.splice(4, 1)[0];
     sentences.splice(1, 0, fifth);
   }
