@@ -5,8 +5,6 @@ const BASIC_LINK = "https://buy.stripe.com/6oU28sc8J50m6GG0RpeME0j";
 const PRO_LINK = "https://buy.stripe.com/14AfZi8WxcsOd547fNeME0k";
 const PREMIUM_LINK = "https://buy.stripe.com/7sY8wQ0q1akG6GGcA7eME0l";
 
-let lastHumanizedText = "";
-
 initializeUsage();
 
 function initializeUsage() {
@@ -152,7 +150,7 @@ function humanizeText() {
   let workingText =
     protectedValues.text;
 
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 4; i++) {
 
     workingText =
       deepHumanize(
@@ -168,12 +166,11 @@ function humanizeText() {
     );
 
   workingText =
-    cleanupRepetition(workingText);
+    cleanupOutput(
+      workingText
+    );
 
   output.innerText =
-    workingText;
-
-  lastHumanizedText =
     workingText;
 
   localStorage.setItem(
@@ -245,26 +242,29 @@ function deepHumanize(text, mode) {
   let rewritten =
     text.replace(/\s+/g, " ").trim();
 
-  const phraseSwaps = [
+  const replacements = [
 
+    ["reported revenue growth", "experienced stronger revenue performance"],
     ["reported", "showed"],
     ["demonstrates", "shows"],
-    ["significant", "meaningful"],
+    ["significant", "fairly meaningful"],
     ["therefore", "because of this"],
     ["however", "even so"],
     ["in addition", "also"],
-    ["overall", "looking at everything together"],
+    ["overall", "looking at the full picture"],
     ["management stated", "management noted"],
     ["primarily", "mostly"],
     ["increased", "moved higher"],
     ["decreased", "moved lower"],
     ["the company", "the business"],
-    ["net income", "profit"],
     ["operating expenses", "operating costs"],
-    ["gross margin", "overall margin performance"]
+    ["net income", "profitability"],
+    ["gross margin", "margin performance"],
+    ["customer retention", "repeat customer activity"],
+    ["free cash flow", "available cash generation"]
   ];
 
-  phraseSwaps.forEach(pair => {
+  replacements.forEach(pair => {
 
     rewritten =
       rewritten.replace(
@@ -276,26 +276,26 @@ function deepHumanize(text, mode) {
   let sentences =
     rewritten
       .split(/(?<=[.!?])\s+/)
-      .map(s => s.trim())
+      .map(sentence => sentence.trim())
       .filter(Boolean);
 
-  const transitions = [
+  const starters = [
 
-    "One thing that becomes noticeable is that",
-    "Looking deeper into the results,",
-    "Another important factor is that",
-    "From a broader standpoint,",
-    "What really stands out here is that",
-    "A closer review also shows that",
-    "At the same time,",
-    "One detail worth paying attention to is that"
+    "What stands out here is that",
+    "Looking deeper into the numbers,",
+    "One important thing to notice is that",
+    "From a broader perspective,",
+    "Another factor worth mentioning is that",
+    "A closer look also shows that",
+    "Interestingly,",
+    "At the same time,"
   ];
 
-  let usedTransitions = [];
+  let usedStarters = [];
 
   sentences = sentences.map((sentence, index) => {
 
-    if (sentence.length < 20) {
+    if (sentence.length < 18) {
       return sentence;
     }
 
@@ -304,44 +304,38 @@ function deepHumanize(text, mode) {
       sentence =
         sentence.replace(
           /, while/gi,
-          ". At the same time,"
+          ". Meanwhile,"
         );
 
       sentence =
         sentence.replace(
           /, because/gi,
-          ". This partly happened because"
+          ". This happened because"
         );
 
       sentence =
         sentence.replace(
           /, and/gi,
-          ". In addition,"
-        );
-
-      sentence =
-        sentence.replace(
-          /, which/gi,
-          ". This also"
+          ". Also,"
         );
     }
 
     if (
       index !== 0 &&
-      Math.random() > 0.55
+      Math.random() > 0.5
     ) {
 
       let available =
-        transitions.filter(
+        starters.filter(
           item =>
-            !usedTransitions.includes(item)
+            !usedStarters.includes(item)
         );
 
       if (available.length === 0) {
 
-        usedTransitions = [];
+        usedStarters = [];
 
-        available = transitions;
+        available = starters;
       }
 
       const selected =
@@ -351,7 +345,7 @@ function deepHumanize(text, mode) {
           )
         ];
 
-      usedTransitions.push(selected);
+      usedStarters.push(selected);
 
       sentence =
         selected +
@@ -361,22 +355,22 @@ function deepHumanize(text, mode) {
     }
 
     if (
-      sentence.length > 120 &&
-      Math.random() > 0.5
+      sentence.length > 100 &&
+      Math.random() > 0.45
     ) {
 
       const midpoint =
         Math.floor(sentence.length / 2);
 
-      const commaIndex =
+      const splitPoint =
         sentence.indexOf(",", midpoint);
 
-      if (commaIndex !== -1) {
+      if (splitPoint !== -1) {
 
         sentence =
-          sentence.slice(0, commaIndex) +
+          sentence.slice(0, splitPoint) +
           "." +
-          sentence.slice(commaIndex + 1);
+          sentence.slice(splitPoint + 1);
       }
     }
 
@@ -384,20 +378,20 @@ function deepHumanize(text, mode) {
 
   });
 
-  if (sentences.length > 4) {
+  if (sentences.length > 3) {
 
-    const first =
-      sentences.shift();
+    const moved =
+      sentences.splice(0, 1)[0];
 
-    sentences.splice(2, 0, first);
+    sentences.splice(2, 0, moved);
   }
 
   if (sentences.length > 5) {
 
-    const last =
-      sentences.pop();
+    const movedSecond =
+      sentences.splice(4, 1)[0];
 
-    sentences.splice(1, 0, last);
+    sentences.splice(1, 0, movedSecond);
   }
 
   rewritten =
@@ -406,27 +400,18 @@ function deepHumanize(text, mode) {
   rewritten =
     rewritten.replace(/\s+/g, " ").trim();
 
-  rewritten =
-    rewritten.replace(/\.\s+\./g, ".");
-
-  rewritten =
-    rewritten.replace(/\s+,/g, ",");
-
-  rewritten =
-    rewritten.replace(/\s+\./g, ".");
-
   if (mode === "academic") {
 
     rewritten =
       rewritten.replace(
-        /What really stands out here is that/gi,
-        "The findings further indicate that"
+        /Interestingly,/gi,
+        "Importantly,"
       );
 
     rewritten =
       rewritten.replace(
-        /Looking deeper into the results,/gi,
-        "Further analysis suggests that"
+        /What stands out here is that/gi,
+        "The findings suggest that"
       );
   }
 
@@ -434,13 +419,13 @@ function deepHumanize(text, mode) {
 
     rewritten =
       rewritten.replace(
-        /From a broader standpoint,/gi,
-        "From a business perspective,"
+        /What stands out here is that/gi,
+        "From a business standpoint,"
       );
 
     rewritten =
       rewritten.replace(
-        /A closer review also shows that/gi,
+        /From a broader perspective,/gi,
         "Operationally,"
       );
   }
@@ -458,7 +443,7 @@ function deepHumanize(text, mode) {
 
     rewritten =
       rewritten.replace(
-        /What really stands out here is that/gi,
+        /Interestingly,/gi,
         "Notably,"
       );
   }
@@ -466,21 +451,22 @@ function deepHumanize(text, mode) {
   return rewritten;
 }
 
-function cleanupRepetition(text) {
+function cleanupOutput(text) {
+
+  let cleaned =
+    text;
 
   const repetitivePhrases = [
 
-    "Looking deeper into the results,",
-    "One thing that becomes noticeable is that",
-    "Another important factor is that",
-    "From a broader standpoint,",
-    "What really stands out here is that",
-    "A closer review also shows that",
-    "At the same time,",
-    "One detail worth paying attention to is that"
+    "What stands out here is that",
+    "Looking deeper into the numbers,",
+    "One important thing to notice is that",
+    "From a broader perspective,",
+    "Another factor worth mentioning is that",
+    "A closer look also shows that",
+    "Interestingly,",
+    "At the same time,"
   ];
-
-  let cleaned = text;
 
   repetitivePhrases.forEach(phrase => {
 
@@ -507,6 +493,15 @@ function cleanupRepetition(text) {
 
   cleaned =
     cleaned.replace(/\s+/g, " ").trim();
+
+  cleaned =
+    cleaned.replace(/\.\s+\./g, ".");
+
+  cleaned =
+    cleaned.replace(/\s+,/g, ",");
+
+  cleaned =
+    cleaned.replace(/\s+\./g, ".");
 
   return cleaned;
 }
