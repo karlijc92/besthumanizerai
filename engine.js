@@ -1,9 +1,12 @@
 function aggressiveHumanize(text, mode) {
+  if (!text || typeof text !== "string") {
+    return "";
+  }
+
   let rewritten = text.replace(/\s+/g, " ").trim();
 
   const replacements = [
     ["reported revenue growth", "showed stronger revenue performance"],
-    ["reported", "showed"],
     ["demonstrates", "shows"],
     ["significant", "meaningful"],
     ["therefore", "because of this"],
@@ -15,15 +18,13 @@ function aggressiveHumanize(text, mode) {
     ["primarily", "mostly"],
     ["increased", "moved higher"],
     ["decreased", "moved lower"],
-    ["net income", "profitability"],
     ["operating expenses", "operating costs"],
     ["gross margin", "margin performance"],
-    ["free cash flow", "available cash flow"],
-    ["the company", "the business"]
+    ["free cash flow", "available cash flow"]
   ];
 
-  replacements.forEach(pair => {
-    rewritten = rewritten.replace(new RegExp(pair[0], "gi"), pair[1]);
+  replacements.forEach(([from, to]) => {
+    rewritten = rewritten.replace(new RegExp("\\b" + from + "\\b", "gi"), to);
   });
 
   let sentences = rewritten
@@ -31,88 +32,84 @@ function aggressiveHumanize(text, mode) {
     .map(sentence => sentence.trim())
     .filter(Boolean);
 
-  const softStarters = [
-    "What stands out is that",
-    "Looking at the numbers,",
-    "One detail that matters is that",
-    "The bigger picture is that",
-    "A closer look shows that",
-    "At the same time,",
-    "Another point worth noting is that",
-    "From a practical standpoint,"
-  ];
+  const startersByMode = {
+    regular: [
+      "The main point is that",
+      "What this really shows is that",
+      "A closer look suggests that",
+      "The important takeaway is that"
+    ],
+    "data-safe": [
+      "The data shows that",
+      "The numbers point to the fact that",
+      "Based on the figures,",
+      "The results suggest that"
+    ],
+    academic: [
+      "This suggests that",
+      "The evidence indicates that",
+      "From an analytical perspective,",
+      "This trend reflects"
+    ],
+    business: [
+      "From a business standpoint,",
+      "Operationally,",
+      "For decision-makers,",
+      "The business impact is that"
+    ],
+    resume: [
+      "This experience shows that",
+      "The result was that",
+      "This reflects",
+      "The work demonstrated that"
+    ]
+  };
 
-  let usedStarters = [];
+  const starters = startersByMode[mode] || startersByMode.regular;
 
   sentences = sentences.map((sentence, index) => {
-    if (sentence.length < 20) {
-      return sentence;
+    let current = sentence;
+
+    if (current.length > 110) {
+      current = current.replace(/,\s+while\s+/gi, ". At the same time, ");
+      current = current.replace(/,\s+because\s+/gi, ". This happened because ");
+      current = current.replace(/,\s+which\s+/gi, ". This also ");
+      current = current.replace(/,\s+and\s+/gi, ". Also, ");
     }
 
-    if (sentence.length > 95) {
-      sentence = sentence.replace(/, while/gi, ". Meanwhile,");
-      sentence = sentence.replace(/, because/gi, ". This happened because");
-      sentence = sentence.replace(/, and/gi, ". Also,");
-      sentence = sentence.replace(/, which/gi, ". This also");
-    }
+    if (index > 0 && index % 3 === 1 && current.length > 35) {
+      const starter = starters[index % starters.length];
 
-    if (index !== 0 && Math.random() > 0.48) {
-      let available = softStarters.filter(starter => !usedStarters.includes(starter));
-
-      if (available.length === 0) {
-        available = softStarters;
-        usedStarters = [];
+      if (!current.toLowerCase().startsWith(starter.toLowerCase())) {
+        current = starter + " " + current.charAt(0).toLowerCase() + current.slice(1);
       }
-
-      const starter = available[Math.floor(Math.random() * available.length)];
-      usedStarters.push(starter);
-
-      sentence = starter + " " + sentence.charAt(0).toLowerCase() + sentence.slice(1);
     }
 
-    if (sentence.length > 120 && Math.random() > 0.35) {
-      const words = sentence.split(" ");
-      const midpoint = Math.floor(words.length / 2);
+    if (current.length > 150) {
+      const words = current.split(" ");
+      const splitPoint = Math.floor(words.length * 0.55);
 
-      sentence =
-        words.slice(0, midpoint).join(" ") +
+      current =
+        words.slice(0, splitPoint).join(" ") +
         ". " +
-        words.slice(midpoint).join(" ");
+        words.slice(splitPoint).join(" ");
     }
 
-    return sentence;
+    return current;
   });
 
-  if (sentences.length > 3) {
-    const first = sentences.splice(0, 1)[0];
-    sentences.splice(2, 0, first);
-  }
-
-  if (sentences.length > 5) {
-    const fifth = sentences.splice(4, 1)[0];
-    sentences.splice(1, 0, fifth);
+  if (sentences.length >= 4) {
+    const second = sentences[1];
+    sentences[1] = sentences[2];
+    sentences[2] = second;
   }
 
   rewritten = sentences.join(" ");
 
-  if (mode === "academic") {
-    rewritten = rewritten.replace(/What stands out is that/gi, "The findings suggest that");
-    rewritten = rewritten.replace(/Looking at the numbers,/gi, "From an analytical standpoint,");
-    rewritten = rewritten.replace(/The bigger picture is that/gi, "This indicates that");
-  }
-
-  if (mode === "business") {
-    rewritten = rewritten.replace(/What stands out is that/gi, "From a business standpoint,");
-    rewritten = rewritten.replace(/The bigger picture is that/gi, "Operationally,");
-  }
-
-  if (mode === "resume") {
-    rewritten = rewritten.replace(/\bthe business\b/gi, "the organization");
-  }
-
-  if (mode === "data-safe") {
-    rewritten = rewritten.replace(/What stands out is that/gi, "Notably,");
-  }
+  rewritten = rewritten.replace(/\bThe main point is that the main point is that\b/gi, "The main point is that");
+  rewritten = rewritten.replace(/\bWhat this really shows is that what this really shows is that\b/gi, "What this really shows is that");
+  rewritten = rewritten.replace(/\bA closer look suggests that a closer look suggests that\b/gi, "A closer look suggests that");
+  rewritten = rewritten.replace(/\bThe important takeaway is that the important takeaway is that\b/gi, "The important takeaway is that");
 
   return rewritten.replace(/\s+/g, " ").trim();
 }
