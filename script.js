@@ -66,6 +66,7 @@ function renderUpgradeOptions(title, description) {
 }
 
 function protectDataBeforeRewrite(text) {
+
   const items = [];
 
   const dataPattern =
@@ -109,15 +110,8 @@ function finalCleanup(text) {
   }
 
   cleaned = cleaned.replace(/\s+/g, " ").trim();
-  cleaned = cleaned.replace(/\.\s+\./g, ".");
-  cleaned = cleaned.replace(/\s+,/g, ",");
-  cleaned = cleaned.replace(/\s+\./g, ".");
-  cleaned = cleaned.replace(/,\s*,/g, ",");
-  cleaned = cleaned.replace(/\s+%/g, "%");
-  cleaned = cleaned.replace(/\$\s+/g, "$");
-  cleaned = cleaned.replace(/(\d)\s+(%)/g, "$1$2");
 
-  return cleaned.trim();
+  return cleaned;
 }
 
 function buildDataWarning(originalText, finalText) {
@@ -137,7 +131,7 @@ function buildDataWarning(originalText, finalText) {
 
   return `
 
-DATA CHECK WARNING: Possible number or citation mismatch found. Please review these missing items: ${comparison.missingItems.join(", ")}`;
+DATA CHECK WARNING: Possible number mismatch found.`;
 }
 
 function humanizeText() {
@@ -169,7 +163,7 @@ function humanizeText() {
 
     upgradeMessage.innerHTML = renderUpgradeOptions(
       "Upgrade Required",
-      "Upgrade for larger rewrites, advanced modes, and long-form humanization."
+      "Upgrade for larger rewrites and advanced modes."
     );
 
     return;
@@ -185,11 +179,6 @@ function humanizeText() {
     output.innerText =
       `Free accounts are limited to ${FREE_CHARACTER_LIMIT.toLocaleString()} characters.`;
 
-    upgradeMessage.innerHTML = renderUpgradeOptions(
-      "Need More Characters?",
-      "Upgrade your account for larger rewrites and advanced rewrite modes."
-    );
-
     return;
   }
 
@@ -198,26 +187,29 @@ function humanizeText() {
   const protectedData =
     protectDataBeforeRewrite(originalInput);
 
-  let humanized = protectedData.text;
-
-  for (let i = 0; i < 4; i++) {
-    humanized = aggressiveHumanize(
-      humanized,
+  let humanized =
+    aggressiveHumanize(
+      protectedData.text,
       rewriteMode
     );
-  }
 
-  humanized = restoreProtectedData(
-    humanized,
-    protectedData.items
-  );
+  humanized =
+    restoreProtectedData(
+      humanized,
+      protectedData.items
+    );
 
-  humanized = finalCleanup(humanized);
+  humanized =
+    finalCleanup(humanized);
 
   const warning =
-    buildDataWarning(originalInput, humanized);
+    buildDataWarning(
+      originalInput,
+      humanized
+    );
 
-  output.innerText = humanized + warning;
+  output.innerText =
+    humanized + warning;
 
   localStorage.setItem(
     "freeRewriteCount",
