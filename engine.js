@@ -34,60 +34,88 @@ function aggressiveHumanize(text, mode) {
 
   const startersByMode = {
     regular: [
-      "The main point is that",
-      "What this really shows is that",
-      "A closer look suggests that",
-      "The important takeaway is that"
+      "What stands out is that",
+      "The larger takeaway is that",
+      "A closer reading shows that",
+      "The key point is that",
+      "In plain terms,"
     ],
     "data-safe": [
       "The data shows that",
-      "The numbers point to the fact that",
+      "The numbers suggest that",
       "Based on the figures,",
-      "The results suggest that"
+      "The results point to",
+      "In practical terms,"
     ],
     academic: [
       "This suggests that",
       "The evidence indicates that",
       "From an analytical perspective,",
-      "This trend reflects"
+      "This trend reflects",
+      "The findings point to"
     ],
     business: [
       "From a business standpoint,",
       "Operationally,",
       "For decision-makers,",
-      "The business impact is that"
+      "The business impact is that",
+      "From a performance view,"
     ],
     resume: [
       "This experience shows that",
       "The result was that",
       "This reflects",
-      "The work demonstrated that"
+      "The work demonstrated that",
+      "This highlights"
     ]
   };
 
   const starters = startersByMode[mode] || startersByMode.regular;
+  const usedStarters = [];
+
+  function pickStarter() {
+    const available = starters.filter(starter => !usedStarters.includes(starter));
+    const pool = available.length ? available : starters;
+    const starter = pool[Math.floor(Math.random() * pool.length)];
+
+    usedStarters.push(starter);
+
+    if (usedStarters.length > 3) {
+      usedStarters.shift();
+    }
+
+    return starter;
+  }
 
   sentences = sentences.map((sentence, index) => {
     let current = sentence;
 
     if (current.length > 110) {
-      current = current.replace(/,\s+while\s+/gi, ". At the same time, ");
-      current = current.replace(/,\s+because\s+/gi, ". This happened because ");
-      current = current.replace(/,\s+which\s+/gi, ". This also ");
-      current = current.replace(/,\s+and\s+/gi, ". Also, ");
+      const splitOptions = [
+        [/, while\s+/i, ". At the same time, "],
+        [/, because\s+/i, ". This happened because "],
+        [/, which\s+/i, ". This also "],
+        [/, and\s+/i, ". Also, "]
+      ];
+
+      splitOptions.forEach(([pattern, replacement]) => {
+        if (Math.random() > 0.45) {
+          current = current.replace(pattern, replacement);
+        }
+      });
     }
 
-    if (index > 0 && index % 3 === 1 && current.length > 35) {
-      const starter = starters[index % starters.length];
+    if (index > 0 && current.length > 45 && Math.random() > 0.62) {
+      const starter = pickStarter();
 
       if (!current.toLowerCase().startsWith(starter.toLowerCase())) {
         current = starter + " " + current.charAt(0).toLowerCase() + current.slice(1);
       }
     }
 
-    if (current.length > 150) {
+    if (current.length > 155 && Math.random() > 0.35) {
       const words = current.split(" ");
-      const splitPoint = Math.floor(words.length * 0.55);
+      const splitPoint = Math.floor(words.length * (0.45 + Math.random() * 0.2));
 
       current =
         words.slice(0, splitPoint).join(" ") +
@@ -98,18 +126,21 @@ function aggressiveHumanize(text, mode) {
     return current;
   });
 
-  if (sentences.length >= 4) {
+  if (sentences.length >= 4 && Math.random() > 0.5) {
     const second = sentences[1];
     sentences[1] = sentences[2];
     sentences[2] = second;
   }
 
+  if (sentences.length >= 6 && Math.random() > 0.55) {
+    const fifth = sentences[4];
+    sentences[4] = sentences[5];
+    sentences[5] = fifth;
+  }
+
   rewritten = sentences.join(" ");
 
-  rewritten = rewritten.replace(/\bThe main point is that the main point is that\b/gi, "The main point is that");
-  rewritten = rewritten.replace(/\bWhat this really shows is that what this really shows is that\b/gi, "What this really shows is that");
-  rewritten = rewritten.replace(/\bA closer look suggests that a closer look suggests that\b/gi, "A closer look suggests that");
-  rewritten = rewritten.replace(/\bThe important takeaway is that the important takeaway is that\b/gi, "The important takeaway is that");
+  rewritten = rewritten.replace(/\b(What stands out is that|The larger takeaway is that|A closer reading shows that|The key point is that|The data shows that|The numbers suggest that|This suggests that|The evidence indicates that)\s+\1\b/gi, "$1");
 
   return rewritten.replace(/\s+/g, " ").trim();
 }
