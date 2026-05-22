@@ -1,4 +1,4 @@
-const FREE_REWRITE_LIMIT = 300;
+const FREE_REWRITE_LIMIT = 30;
 const FREE_CHARACTER_LIMIT = 1000;
 
 const BASIC_LINK = "https://buy.stripe.com/6oU28sc8J50m6GG0RpeME0j";
@@ -36,13 +36,8 @@ function updateUsageDisplay() {
 function renderUpgradeOptions(title, description) {
   return `
     <div style="margin-top:24px;padding:24px;border-radius:20px;background:#ffffff;border:1px solid #e5e7eb;box-shadow:0 12px 35px rgba(15,23,42,0.08);">
-      <h3 style="margin-bottom:12px;color:#111827;font-size:28px;">
-        ${title}
-      </h3>
-
-      <p style="color:#4b5563;line-height:1.7;margin-bottom:24px;">
-        ${description}
-      </p>
+      <h3 style="margin-bottom:12px;color:#111827;font-size:28px;">${title}</h3>
+      <p style="color:#4b5563;line-height:1.7;margin-bottom:24px;">${description}</p>
 
       <div style="display:grid;gap:16px;">
         <a href="${BASIC_LINK}" style="display:block;text-decoration:none;padding:16px 18px;border-radius:14px;border:1px solid #d1d5db;color:#111827;background:#f9fafb;">
@@ -72,19 +67,11 @@ function protectDataBeforeRewrite(text) {
 
   const protectedText = text.replace(dataPattern, function(match) {
     const token = `__DATA_${items.length}__`;
-
-    items.push({
-      token,
-      value: match
-    });
-
+    items.push({ token, value: match });
     return token;
   });
 
-  return {
-    text: protectedText,
-    items
-  };
+  return { text: protectedText, items };
 }
 
 function restoreProtectedData(text, items) {
@@ -144,7 +131,6 @@ function humanizeText() {
 
   const rewriteMode = rewriteModeElement.value;
   const currentCount = parseInt(localStorage.getItem("freeRewriteCount") || "0");
-
   const originalInput = inputElement.value.trim();
 
   if (currentCount >= FREE_REWRITE_LIMIT) {
@@ -176,10 +162,7 @@ function humanizeText() {
 
   upgradeMessage.innerHTML = "";
 
-  const textToRewrite = lastHumanizedText && inputElement.value.trim() === lastHumanizedText
-    ? lastHumanizedText
-    : originalInput;
-
+  const textToRewrite = originalInput;
   const protectedData = protectDataBeforeRewrite(textToRewrite);
 
   let humanized = protectedData.text;
