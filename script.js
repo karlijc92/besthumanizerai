@@ -5,8 +5,6 @@ const BASIC_LINK = "https://buy.stripe.com/6oU28sc8J50m6GG0RpeME0j";
 const PRO_LINK = "https://buy.stripe.com/14AfZi8WxcsOd547fNeME0k";
 const PREMIUM_LINK = "https://buy.stripe.com/7sY8wQ0q1akG6GGcA7eME0l";
 
-let lastHumanizedText = "";
-
 initializeUsage();
 
 function initializeUsage() {
@@ -29,15 +27,23 @@ function updateUsageDisplay() {
   const currentCount = parseInt(localStorage.getItem("freeRewriteCount") || "0");
   const remaining = FREE_REWRITE_LIMIT - currentCount;
 
-  rewriteCounter.innerText = `Free rewrites remaining: ${Math.max(remaining, 0)}`;
-  characterCounter.innerText = `${input.value.length.toLocaleString()} / ${FREE_CHARACTER_LIMIT.toLocaleString()} characters`;
+  rewriteCounter.innerText =
+    `Free rewrites remaining: ${Math.max(remaining, 0)}`;
+
+  characterCounter.innerText =
+    `${input.value.length.toLocaleString()} / ${FREE_CHARACTER_LIMIT.toLocaleString()} characters`;
 }
 
 function renderUpgradeOptions(title, description) {
   return `
     <div style="margin-top:24px;padding:24px;border-radius:20px;background:#ffffff;border:1px solid #e5e7eb;box-shadow:0 12px 35px rgba(15,23,42,0.08);">
-      <h3 style="margin-bottom:12px;color:#111827;font-size:28px;">${title}</h3>
-      <p style="color:#4b5563;line-height:1.7;margin-bottom:24px;">${description}</p>
+      <h3 style="margin-bottom:12px;color:#111827;font-size:28px;">
+        ${title}
+      </h3>
+
+      <p style="color:#4b5563;line-height:1.7;margin-bottom:24px;">
+        ${description}
+      </p>
 
       <div style="display:grid;gap:16px;">
         <a href="${BASIC_LINK}" style="display:block;text-decoration:none;padding:16px 18px;border-radius:14px;border:1px solid #d1d5db;color:#111827;background:#f9fafb;">
@@ -66,18 +72,28 @@ function protectDataBeforeRewrite(text) {
     /\$?\d+(?:,\d{3})*(?:\.\d+)?\s?(?:billion|million|thousand|trillion)?%?|\b(?:19|20)\d{2}\b|\([A-Za-z]+,\s?\d{4}\)/gi;
 
   const protectedText = text.replace(dataPattern, function(match) {
+
     const token = `__DATA_${items.length}__`;
-    items.push({ token, value: match });
+
+    items.push({
+      token,
+      value: match
+    });
+
     return token;
   });
 
-  return { text: protectedText, items };
+  return {
+    text: protectedText,
+    items
+  };
 }
 
 function restoreProtectedData(text, items) {
+
   let restored = text;
 
-  items.forEach(item => {
+  items.forEach(function(item) {
     restored = restored.replaceAll(item.token, item.value);
   });
 
@@ -85,6 +101,7 @@ function restoreProtectedData(text, items) {
 }
 
 function finalCleanup(text) {
+
   let cleaned = text;
 
   if (typeof cleanupHumanizedText === "function") {
@@ -104,11 +121,15 @@ function finalCleanup(text) {
 }
 
 function buildDataWarning(originalText, finalText) {
+
   if (typeof compareProtectedData !== "function") {
     return "";
   }
 
-  const comparison = compareProtectedData(originalText, finalText);
+  const comparison = compareProtectedData(
+    originalText,
+    finalText
+  );
 
   if (comparison.isDataSafe) {
     return "";
@@ -120,20 +141,30 @@ DATA CHECK WARNING: Possible number or citation mismatch found. Please review th
 }
 
 function humanizeText() {
+
   const inputElement = document.getElementById("inputText");
   const output = document.getElementById("outputText");
   const rewriteModeElement = document.getElementById("rewriteMode");
   const upgradeMessage = document.getElementById("upgradeMessage");
 
-  if (!inputElement || !output || !rewriteModeElement || !upgradeMessage) {
+  if (
+    !inputElement ||
+    !output ||
+    !rewriteModeElement ||
+    !upgradeMessage
+  ) {
     return;
   }
 
   const rewriteMode = rewriteModeElement.value;
-  const currentCount = parseInt(localStorage.getItem("freeRewriteCount") || "0");
+
+  const currentCount =
+    parseInt(localStorage.getItem("freeRewriteCount") || "0");
+
   const originalInput = inputElement.value.trim();
 
   if (currentCount >= FREE_REWRITE_LIMIT) {
+
     output.innerText = "Free rewrites have been used.";
 
     upgradeMessage.innerHTML = renderUpgradeOptions(
@@ -150,7 +181,9 @@ function humanizeText() {
   }
 
   if (originalInput.length > FREE_CHARACTER_LIMIT) {
-    output.innerText = `Free accounts are limited to ${FREE_CHARACTER_LIMIT.toLocaleString()} characters.`;
+
+    output.innerText =
+      `Free accounts are limited to ${FREE_CHARACTER_LIMIT.toLocaleString()} characters.`;
 
     upgradeMessage.innerHTML = renderUpgradeOptions(
       "Need More Characters?",
@@ -162,24 +195,34 @@ function humanizeText() {
 
   upgradeMessage.innerHTML = "";
 
-  const textToRewrite = originalInput;
-  const protectedData = protectDataBeforeRewrite(textToRewrite);
+  const protectedData =
+    protectDataBeforeRewrite(originalInput);
 
   let humanized = protectedData.text;
 
   for (let i = 0; i < 4; i++) {
-    humanized = aggressiveHumanize(humanized, rewriteMode);
+    humanized = aggressiveHumanize(
+      humanized,
+      rewriteMode
+    );
   }
 
-  humanized = restoreProtectedData(humanized, protectedData.items);
+  humanized = restoreProtectedData(
+    humanized,
+    protectedData.items
+  );
+
   humanized = finalCleanup(humanized);
 
-  const warning = buildDataWarning(textToRewrite, humanized);
+  const warning =
+    buildDataWarning(originalInput, humanized);
 
-  lastHumanizedText = humanized;
   output.innerText = humanized + warning;
 
-  localStorage.setItem("freeRewriteCount", String(currentCount + 1));
+  localStorage.setItem(
+    "freeRewriteCount",
+    String(currentCount + 1)
+  );
 
   updateUsageDisplay();
 }
