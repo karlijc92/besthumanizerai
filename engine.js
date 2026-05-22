@@ -1,11 +1,12 @@
-let humanizeVariationCycle = 0;
+let humanizeEngineCallCount = 0;
 
 function aggressiveHumanize(text, mode) {
   if (!text || typeof text !== "string") {
     return "";
   }
 
-  humanizeVariationCycle = (humanizeVariationCycle + 1) % 4;
+  const humanizeVariationCycle = Math.floor(humanizeEngineCallCount / 4) % 4;
+  humanizeEngineCallCount++;
 
   let rewritten = text.replace(/\s+/g, " ").trim();
 
@@ -111,9 +112,4 @@ function aggressiveHumanize(text, mode) {
   rewritten = sentences.join(" ");
 
   rewritten = rewritten.replace(/\bThe main point is that the main point is that\b/gi, "The main point is that");
-  rewritten = rewritten.replace(/\bWhat this really shows is that what this really shows is that\b/gi, "What this really shows is that");
-  rewritten = rewritten.replace(/\bA closer look suggests that a closer look suggests that\b/gi, "A closer look suggests that");
-  rewritten = rewritten.replace(/\bThe important takeaway is that the important takeaway is that\b/gi, "The important takeaway is that");
-
-  return rewritten.replace(/\s+/g, " ").trim();
-}
+  rewritten = rewritten.replace(/\bWhat this really shows is that what this really shows is that\b/gi, "What this really
