@@ -1,12 +1,7 @@
-let humanizeEngineCallCount = 0;
-
 function aggressiveHumanize(text, mode) {
   if (!text || typeof text !== "string") {
     return "";
   }
-
-  const humanizeVariationCycle = Math.floor(humanizeEngineCallCount / 4) % 4;
-  humanizeEngineCallCount++;
 
   let rewritten = text.replace(/\s+/g, " ").trim();
 
@@ -28,13 +23,17 @@ function aggressiveHumanize(text, mode) {
     ["free cash flow", "available cash flow"]
   ];
 
-  replacements.forEach(([from, to]) => {
+  replacements.forEach(function(pair) {
+    const from = pair[0];
+    const to = pair[1];
     rewritten = rewritten.replace(new RegExp("\\b" + from + "\\b", "gi"), to);
   });
 
   let sentences = rewritten
     .split(/(?<=[.!?])\s+/)
-    .map(sentence => sentence.trim())
+    .map(function(sentence) {
+      return sentence.trim();
+    })
     .filter(Boolean);
 
   const startersByMode = {
@@ -72,12 +71,11 @@ function aggressiveHumanize(text, mode) {
 
   const starters = startersByMode[mode] || startersByMode.regular;
 
-  sentences = sentences.map((sentence, index) => {
+  sentences = sentences.map(function(sentence, index) {
     let current = sentence;
 
     if (index > 0 && index % 3 === 1 && current.length > 35) {
-      const starterIndex = (index + humanizeVariationCycle) % starters.length;
-      const starter = starters[starterIndex];
+      const starter = starters[index % starters.length];
 
       if (!current.toLowerCase().startsWith(starter.toLowerCase())) {
         current = starter + " " + current.charAt(0).toLowerCase() + current.slice(1);
@@ -98,18 +96,17 @@ function aggressiveHumanize(text, mode) {
   });
 
   if (sentences.length >= 4) {
-    if (humanizeVariationCycle === 0 || humanizeVariationCycle === 2) {
-      const second = sentences[1];
-      sentences[1] = sentences[2];
-      sentences[2] = second;
-    } else {
-      const third = sentences[2];
-      sentences[2] = sentences[3];
-      sentences[3] = third;
-    }
+    const second = sentences[1];
+    sentences[1] = sentences[2];
+    sentences[2] = second;
   }
 
   rewritten = sentences.join(" ");
 
   rewritten = rewritten.replace(/\bThe main point is that the main point is that\b/gi, "The main point is that");
-  rewritten = rewritten.replace(/\bWhat this really shows is that what this really shows is that\b/gi, "What this really
+  rewritten = rewritten.replace(/\bWhat this really shows is that what this really shows is that\b/gi, "What this really shows is that");
+  rewritten = rewritten.replace(/\bA closer look suggests that a closer look suggests that\b/gi, "A closer look suggests that");
+  rewritten = rewritten.replace(/\bThe important takeaway is that the important takeaway is that\b/gi, "The important takeaway is that");
+
+  return rewritten.replace(/\s+/g, " ").trim();
+}
