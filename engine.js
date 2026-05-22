@@ -3,110 +3,58 @@ function aggressiveHumanize(text, mode) {
     return "";
   }
 
-  let rewritten = text.replace(/\s+/g, " ").trim();
+  var rewritten = text.replace(/\s+/g, " ").trim();
 
-  const replacements = [
-    ["reported revenue growth", "showed stronger revenue performance"],
-    ["demonstrates", "shows"],
-    ["significant", "meaningful"],
-    ["therefore", "because of this"],
-    ["however", "still"],
-    ["in addition", "also"],
-    ["overall", "looking at the full picture"],
-    ["during the same period", "around the same time"],
-    ["management stated", "management noted"],
-    ["primarily", "mostly"],
-    ["increased", "moved higher"],
-    ["decreased", "moved lower"],
-    ["operating expenses", "operating costs"],
-    ["gross margin", "margin performance"],
-    ["free cash flow", "available cash flow"]
-  ];
+  rewritten = rewritten.replace(/\breported\b/gi, "showed");
+  rewritten = rewritten.replace(/\bdemonstrates\b/gi, "shows");
+  rewritten = rewritten.replace(/\bsignificant\b/gi, "meaningful");
+  rewritten = rewritten.replace(/\bhowever\b/gi, "still");
+  rewritten = rewritten.replace(/\bin addition\b/gi, "also");
+  rewritten = rewritten.replace(/\bprimarily\b/gi, "mostly");
+  rewritten = rewritten.replace(/\bincreased\b/gi, "moved higher");
+  rewritten = rewritten.replace(/\bdecreased\b/gi, "moved lower");
+  rewritten = rewritten.replace(/\boperating expenses\b/gi, "operating costs");
+  rewritten = rewritten.replace(/\bgross margin\b/gi, "margin performance");
+  rewritten = rewritten.replace(/\bfree cash flow\b/gi, "available cash flow");
 
-  replacements.forEach(function(pair) {
-    const from = pair[0];
-    const to = pair[1];
-    rewritten = rewritten.replace(new RegExp("\\b" + from + "\\b", "gi"), to);
-  });
-
-  let sentences = rewritten
-    .split(/(?<=[.!?])\s+/)
+  var sentences = rewritten
+    .split(". ")
     .map(function(sentence) {
       return sentence.trim();
     })
-    .filter(Boolean);
-
-  const startersByMode = {
-    regular: [
-      "The main point is that",
-      "What this really shows is that",
-      "A closer look suggests that",
-      "The important takeaway is that"
-    ],
-    "data-safe": [
-      "The data shows that",
-      "The numbers point to the fact that",
-      "Based on the figures,",
-      "The results suggest that"
-    ],
-    academic: [
-      "This suggests that",
-      "The evidence indicates that",
-      "From an analytical perspective,",
-      "This trend reflects"
-    ],
-    business: [
-      "From a business standpoint,",
-      "Operationally,",
-      "For decision-makers,",
-      "The business impact is that"
-    ],
-    resume: [
-      "This experience shows that",
-      "The result was that",
-      "This reflects",
-      "The work demonstrated that"
-    ]
-  };
-
-  const starters = startersByMode[mode] || startersByMode.regular;
-
-  sentences = sentences.map(function(sentence, index) {
-    let current = sentence;
-
-    if (index > 0 && index % 3 === 1 && current.length > 35) {
-      const starter = starters[index % starters.length];
-
-      if (!current.toLowerCase().startsWith(starter.toLowerCase())) {
-        current = starter + " " + current.charAt(0).toLowerCase() + current.slice(1);
-      }
-    }
-
-    if (current.length > 150) {
-      const words = current.split(" ");
-      const splitPoint = Math.floor(words.length * 0.55);
-
-      current =
-        words.slice(0, splitPoint).join(" ") +
-        ". " +
-        words.slice(splitPoint).join(" ");
-    }
-
-    return current;
-  });
+    .filter(function(sentence) {
+      return sentence.length > 0;
+    });
 
   if (sentences.length >= 4) {
-    const second = sentences[1];
+    var temp = sentences[1];
     sentences[1] = sentences[2];
-    sentences[2] = second;
+    sentences[2] = temp;
   }
 
-  rewritten = sentences.join(" ");
+  var openers = {
+    regular: "What this shows is that",
+    "data-safe": "The data shows that",
+    academic: "This suggests that",
+    business: "From a business standpoint,",
+    resume: "This reflects"
+  };
 
-  rewritten = rewritten.replace(/\bThe main point is that the main point is that\b/gi, "The main point is that");
-  rewritten = rewritten.replace(/\bWhat this really shows is that what this really shows is that\b/gi, "What this really shows is that");
-  rewritten = rewritten.replace(/\bA closer look suggests that a closer look suggests that\b/gi, "A closer look suggests that");
-  rewritten = rewritten.replace(/\bThe important takeaway is that the important takeaway is that\b/gi, "The important takeaway is that");
+  var opener = openers[mode] || openers.regular;
+
+  sentences = sentences.map(function(sentence, index) {
+    if (index === 2 && sentence.length > 40) {
+      return opener + " " + sentence.charAt(0).toLowerCase() + sentence.slice(1);
+    }
+
+    return sentence;
+  });
+
+  rewritten = sentences.join(". ");
+
+  if (rewritten && !/[.!?]$/.test(rewritten)) {
+    rewritten += ".";
+  }
 
   return rewritten.replace(/\s+/g, " ").trim();
 }
