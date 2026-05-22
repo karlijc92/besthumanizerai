@@ -1,7 +1,11 @@
+let humanizeVariationCycle = 0;
+
 function aggressiveHumanize(text, mode) {
   if (!text || typeof text !== "string") {
     return "";
   }
+
+  humanizeVariationCycle = (humanizeVariationCycle + 1) % 4;
 
   let rewritten = text.replace(/\s+/g, " ").trim();
 
@@ -71,14 +75,11 @@ function aggressiveHumanize(text, mode) {
     let current = sentence;
 
     if (index > 0 && index % 3 === 1 && current.length > 35) {
-      const starter = starters[index % starters.length];
+      const starterIndex = (index + humanizeVariationCycle) % starters.length;
+      const starter = starters[starterIndex];
 
       if (!current.toLowerCase().startsWith(starter.toLowerCase())) {
-        current =
-          starter +
-          " " +
-          current.charAt(0).toLowerCase() +
-          current.slice(1);
+        current = starter + " " + current.charAt(0).toLowerCase() + current.slice(1);
       }
     }
 
@@ -96,32 +97,23 @@ function aggressiveHumanize(text, mode) {
   });
 
   if (sentences.length >= 4) {
-    const second = sentences[1];
-    sentences[1] = sentences[2];
-    sentences[2] = second;
+    if (humanizeVariationCycle === 0 || humanizeVariationCycle === 2) {
+      const second = sentences[1];
+      sentences[1] = sentences[2];
+      sentences[2] = second;
+    } else {
+      const third = sentences[2];
+      sentences[2] = sentences[3];
+      sentences[3] = third;
+    }
   }
 
   rewritten = sentences.join(" ");
 
-  rewritten = rewritten.replace(
-    /\bThe main point is that the main point is that\b/gi,
-    "The main point is that"
-  );
-
-  rewritten = rewritten.replace(
-    /\bWhat this really shows is that what this really shows is that\b/gi,
-    "What this really shows is that"
-  );
-
-  rewritten = rewritten.replace(
-    /\bA closer look suggests that a closer look suggests that\b/gi,
-    "A closer look suggests that"
-  );
-
-  rewritten = rewritten.replace(
-    /\bThe important takeaway is that the important takeaway is that\b/gi,
-    "The important takeaway is that"
-  );
+  rewritten = rewritten.replace(/\bThe main point is that the main point is that\b/gi, "The main point is that");
+  rewritten = rewritten.replace(/\bWhat this really shows is that what this really shows is that\b/gi, "What this really shows is that");
+  rewritten = rewritten.replace(/\bA closer look suggests that a closer look suggests that\b/gi, "A closer look suggests that");
+  rewritten = rewritten.replace(/\bThe important takeaway is that the important takeaway is that\b/gi, "The important takeaway is that");
 
   return rewritten.replace(/\s+/g, " ").trim();
 }
