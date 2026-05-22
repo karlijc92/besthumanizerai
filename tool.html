@@ -35,13 +35,8 @@
   <div class="pricing-box">
 
     <div class="usage-box">
-      <p id="rewriteCounter">
-        Free rewrites remaining: 300
-      </p>
-
-      <p id="characterCounter">
-        0 / 1,000 characters
-      </p>
+      <p id="rewriteCounter">Free rewrites remaining: 300</p>
+      <p id="characterCounter">0 / 1,000 characters</p>
     </div>
 
     <h2>Choose Rewrite Mode</h2>
@@ -66,7 +61,7 @@
 
     <br><br>
 
-    <button type="button" id="humanizeButton">
+    <button type="button" onclick="humanizeText()" id="humanizeButton">
       Humanize Text
     </button>
 
@@ -88,20 +83,6 @@
   <script src="engine.js"></script>
   <script src="cleanup.js"></script>
   <script src="script.js"></script>
-
-  <script>
-    document.addEventListener("DOMContentLoaded", function () {
-
-      const button = document.getElementById("humanizeButton");
-
-      if (button) {
-        button.addEventListener("click", function () {
-          humanizeText();
-        });
-      }
-
-    });
-  </script>
 
 </body>
 </html>
