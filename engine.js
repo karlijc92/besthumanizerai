@@ -70,18 +70,15 @@ function aggressiveHumanize(text, mode) {
   sentences = sentences.map((sentence, index) => {
     let current = sentence;
 
-    if (current.length > 110) {
-      current = current.replace(/,\s+while\s+/gi, ". At the same time, ");
-      current = current.replace(/,\s+because\s+/gi, ". This happened because ");
-      current = current.replace(/,\s+which\s+/gi, ". This also ");
-      current = current.replace(/,\s+and\s+/gi, ". Also, ");
-    }
-
     if (index > 0 && index % 3 === 1 && current.length > 35) {
       const starter = starters[index % starters.length];
 
       if (!current.toLowerCase().startsWith(starter.toLowerCase())) {
-        current = starter + " " + current.charAt(0).toLowerCase() + current.slice(1);
+        current =
+          starter +
+          " " +
+          current.charAt(0).toLowerCase() +
+          current.slice(1);
       }
     }
 
@@ -106,10 +103,25 @@ function aggressiveHumanize(text, mode) {
 
   rewritten = sentences.join(" ");
 
-  rewritten = rewritten.replace(/\bThe main point is that the main point is that\b/gi, "The main point is that");
-  rewritten = rewritten.replace(/\bWhat this really shows is that what this really shows is that\b/gi, "What this really shows is that");
-  rewritten = rewritten.replace(/\bA closer look suggests that a closer look suggests that\b/gi, "A closer look suggests that");
-  rewritten = rewritten.replace(/\bThe important takeaway is that the important takeaway is that\b/gi, "The important takeaway is that");
+  rewritten = rewritten.replace(
+    /\bThe main point is that the main point is that\b/gi,
+    "The main point is that"
+  );
+
+  rewritten = rewritten.replace(
+    /\bWhat this really shows is that what this really shows is that\b/gi,
+    "What this really shows is that"
+  );
+
+  rewritten = rewritten.replace(
+    /\bA closer look suggests that a closer look suggests that\b/gi,
+    "A closer look suggests that"
+  );
+
+  rewritten = rewritten.replace(
+    /\bThe important takeaway is that the important takeaway is that\b/gi,
+    "The important takeaway is that"
+  );
 
   return rewritten.replace(/\s+/g, " ").trim();
 }
