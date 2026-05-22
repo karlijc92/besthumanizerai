@@ -36,7 +36,7 @@
 
     <div class="usage-box">
       <p id="rewriteCounter">
-        Free rewrites remaining: 3
+        Free rewrites remaining: 300
       </p>
 
       <p id="characterCounter">
@@ -66,7 +66,7 @@
 
     <br><br>
 
-    <button onclick="humanizeText()" id="humanizeButton">
+    <button type="button" id="humanizeButton">
       Humanize Text
     </button>
 
@@ -88,6 +88,20 @@
   <script src="engine.js"></script>
   <script src="cleanup.js"></script>
   <script src="script.js"></script>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+
+      const button = document.getElementById("humanizeButton");
+
+      if (button) {
+        button.addEventListener("click", function () {
+          humanizeText();
+        });
+      }
+
+    });
+  </script>
 
 </body>
 </html>
