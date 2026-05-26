@@ -7,6 +7,7 @@
   <title>Humanizer Tool | BestHumanizerAI</title>
 
   <link rel="stylesheet" href="style.css" />
+  <script src="script.js" defer></script>
 </head>
 
 <body>
@@ -36,11 +37,7 @@
     <section class="tool-container">
       <div class="tool-card">
         <label for="inputText">Original Text</label>
-        <textarea
-          id="inputText"
-          placeholder="Paste your paragraph here..."
-          rows="10"
-        ></textarea>
+        <textarea id="inputText" placeholder="Paste your paragraph here..." rows="10"></textarea>
 
         <div class="tool-options">
           <label for="rewriteMode">Rewrite Mode</label>
@@ -59,7 +56,7 @@
           <span id="rewriteCount">Free rewrites remaining: 3</span>
         </div>
 
-        <button id="humanizeBtn" type="button">
+        <button id="humanizeBtn" type="button" onclick="humanizeText()">
           Humanize Text
         </button>
 
@@ -68,14 +65,9 @@
 
       <div class="tool-card">
         <label for="outputText">Humanized Output</label>
-        <textarea
-          id="outputText"
-          placeholder="Your humanized version will appear here..."
-          rows="10"
-          readonly
-        ></textarea>
+        <textarea id="outputText" placeholder="Your humanized version will appear here..." rows="10" readonly></textarea>
 
-        <button id="copyBtn" type="button">
+        <button id="copyBtn" type="button" onclick="copyOutputText()">
           Copy Output
         </button>
       </div>
@@ -86,6 +78,5 @@
     <p>© 2026 BestHumanizerAI. All rights reserved.</p>
   </footer>
 
-  <script src="script.js"></script>
 </body>
 </html>
