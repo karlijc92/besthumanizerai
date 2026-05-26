@@ -26,6 +26,10 @@ function initializeTool() {
     copyButton.onclick = copyOutputText;
   }
 
+  if (!localStorage.getItem("rewriteCountUsed")) {
+    localStorage.setItem("rewriteCountUsed", "0");
+  }
+
   updateUsageDisplay();
 }
 
@@ -34,8 +38,10 @@ function updateUsageDisplay() {
   const rewriteCount = document.getElementById("rewriteCount");
   const charCount = document.getElementById("charCount");
 
+  const used = parseInt(localStorage.getItem("rewriteCountUsed") || "0");
+
   if (rewriteCount) {
-    rewriteCount.innerText = "Testing mode: unlimited rewrites";
+    rewriteCount.innerText = `Rewrites used: ${used}`;
   }
 
   if (input && charCount) {
@@ -139,6 +145,9 @@ function humanizeText() {
 
   output.value = humanized + warning;
   lastHumanizedText = humanized;
+
+  const used = parseInt(localStorage.getItem("rewriteCountUsed") || "0");
+  localStorage.setItem("rewriteCountUsed", String(used + 1));
 
   updateUsageDisplay();
 }
