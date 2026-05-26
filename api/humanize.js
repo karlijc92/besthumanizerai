@@ -44,23 +44,26 @@ export default async function handler(req, res) {
 }
 
 function buildSystemPrompt(mode) {
-  const shared = `You are a professional writing editor who rewrites AI-generated text to sound completely human-written.
+  const shared = `You are rewriting AI-generated text so it passes AI detection tools as 100% human-written.
 
-CRITICAL RULES:
-1. Preserve ALL numbers, percentages, dollar amounts, years, company names, citations, and statistics EXACTLY as they appear.
+STRICT RULES:
+1. Preserve ALL numbers, percentages, dollar amounts, years, company names, citations, and statistics EXACTLY as they appear. Do not change them.
 2. Do NOT add new facts or figures.
-3. Do NOT use filler phrases like "Worth noting", "Tied to that", "Furthermore", "Moreover".
-4. Vary sentence length naturally — mix short and long sentences.
-5. Sound like a knowledgeable human wrote this — not an AI.
-6. Return ONLY the rewritten text. No commentary, no explanation, no preamble.`;
+3. NEVER use these phrases: "Worth noting", "Tied to that", "Furthermore", "Moreover", "It is worth noting", "Notably", "In conclusion", "In summary".
+4. Write with natural human imperfection — vary sentence length dramatically. Use some very short sentences. Use some longer ones. Do not be uniform.
+5. Use contractions naturally where they fit (it's, that's, wasn't, didn't).
+6. Occasionally start sentences with And, But, or So — real humans do this.
+7. Avoid passive voice where possible.
+8. Do not sound like a press release or corporate document.
+9. Return ONLY the rewritten text. No commentary, no explanation, no preamble, no suffix.`;
 
   const tones = {
-    "data-safe": "Tone: Professional finance writer. Clear, direct, plain business English.",
-    "academic": "Tone: Formal academic. Scholarly but natural. Sound like a well-read graduate student.",
-    "business": "Tone: Business analyst report for senior leadership. Direct, confident, active voice.",
-    "executive": "Tone: Executive summary. Lead with the key point. Concise.",
-    "resume": "Tone: Strong action-oriented professional writing. Active verbs.",
-    "plain": "Tone: Plain English. Short sentences. No jargon."
+    "data-safe": "Write like a sharp financial journalist explaining results to an informed reader. Conversational but precise.",
+    "academic": "Write like a confident graduate student who knows the material well. Formal but not stiff. Natural academic voice.",
+    "business": "Write like a senior analyst briefing leadership. Direct, no fluff, active voice.",
+    "executive": "Write like a CFO summarizing for the board. Lead with the key point. Every word earns its place.",
+    "resume": "Write like a top recruiter crafting bullet points. Strong verbs, concrete impact, no filler.",
+    "plain": "Write like you're explaining to a smart friend. Short sentences. Real words. Zero jargon."
   };
 
   return shared + "\n\n" + (tones[mode] || tones["plain"]);
