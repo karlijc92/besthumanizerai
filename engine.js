@@ -7,10 +7,11 @@ function aggressiveHumanize(text, mode) {
   sentences = sentences.map(s => rewriteSentence(s, mode));
   sentences = shuffleMiddle(sentences);
   sentences = applyBurstiness(sentences);
-  sentences = applyToneConnectors(sentences, mode);
+  sentences = applyToneConnector(sentences, mode);
 
   let result = sentences.join(" ").replace(/\s+/g, " ").trim();
   result = restoreData(result, protected_.map);
+  result = finalClean(result);
   if (!/[.!?]$/.test(result)) result += ".";
   return result;
 }
@@ -42,9 +43,32 @@ function splitSentences(text) {
     .filter(s => s.length > 8);
 }
 
+function stripOpener(s) {
+  return s.replace(/^(On balance|By any measure|Notably|Taken together|In fact|That said|Also|And|But|Meanwhile|Furthermore|Moreover|Simply put|What this means is that|In plain terms|The bottom line here is that|From a results standpoint|In practical terms|The key takeaway is that|At a high level|This suggests that|The evidence points to the fact that|Analysis indicates that|The numbers show that|Looking at the data|The figures make clear that|The data makes clear that|This demonstrates that|A clear example of this is that|The impact here is that|In practice|At its core|Put simply|To that point|As it stands|Worth noting|Tied to that|On that front|Digging into|Looking more closely)[,\s—-]*/i, "").trim();
+}
+
 function rewriteSentence(s, mode) {
   s = applySwaps(s);
-  s = restructureOnce(s);
+
+  if (Math.random() > 0.5) {
+    const openers = [
+      "In fact,", "Notably,", "As it stands,", "To that point,",
+      "Put simply,", "On balance,", "At its core,", "In practice,",
+      "By any measure,", "Taken together,"
+    ];
+    const clean = stripOpener(s);
+    s = pick(openers) + " " + clean.charAt(0).toLowerCase() + clean.slice(1);
+  }
+
+  if (mode === "academic") {
+    s = s.replace(/\bshows\b/g, "suggests");
+    s = s.replace(/\bpoints to\b/g, "indicates");
+  }
+  if (mode === "plain") {
+    s = s.replace(/\bindicates\b/g, "shows");
+    s = s.replace(/\bsuggests\b/g, "means");
+  }
+
   return s;
 }
 
@@ -53,74 +77,50 @@ function applySwaps(s) {
     [/\butilize[sd]?\b/gi, ["use", "apply", "employ"]],
     [/\bdemonstrate[sd]?\b/gi, ["show", "reveal", "reflect"]],
     [/\bindicate[sd]?\b/gi, ["point to", "suggest", "show"]],
-    [/\bsignificant(ly)?\b/gi, (m, p) => p ? pick(["notably","meaningfully","considerably"]) : pick(["notable","meaningful","considerable"])],
-    [/\bprimarily\b/gi, ["mainly","largely","mostly"]],
-    [/\bfurthermore\b/gi, ["beyond that","on top of that","building on this"]],
-    [/\bmoreover\b/gi, ["on top of that","adding to this","beyond that"]],
-    [/\bhowever\b/gi, ["that said","even so","still"]],
-    [/\bin addition\b/gi, ["also","on top of that","as well"]],
-    [/\bprior to\b/gi, ["before","ahead of"]],
-    [/\bin order to\b/gi, ["to","so as to"]],
-    [/\bdue to the fact that\b/gi, ["because","since","given that"]],
-    [/\bsubsequently\b/gi, ["after that","then","following this"]],
-    [/\bnevertheless\b/gi, ["even so","still","that said"]],
-    [/\bcommenced\b/gi, ["started","began","kicked off"]],
-    [/\byear-over-year\b/gi, ["from the prior year","versus last year","compared to a year ago"]],
-    [/\bcompared with\b/gi, ["versus","against","next to"]],
-    [/\bdriven (?:primarily )?by\b/gi, ["fueled by","pushed by","led by"]],
+    [/\bsignificantly\b/gi, ["notably", "meaningfully", "considerably"]],
+    [/\bsignificant\b/gi, ["notable", "meaningful", "considerable"]],
+    [/\bprimarily\b/gi, ["mainly", "largely", "mostly"]],
+    [/\bfurthermore\b/gi, ["beyond that", "on top of that", "building on this"]],
+    [/\bmoreover\b/gi, ["on top of that", "adding to this", "beyond that"]],
+    [/\bhowever\b/gi, ["that said", "even so", "still"]],
+    [/\bin addition\b/gi, ["also", "on top of that", "as well"]],
+    [/\bprior to\b/gi, ["before", "ahead of"]],
+    [/\bin order to\b/gi, ["to", "so as to"]],
+    [/\bdue to the fact that\b/gi, ["because", "since", "given that"]],
+    [/\bsubsequently\b/gi, ["after that", "then", "following this"]],
+    [/\bnevertheless\b/gi, ["even so", "still", "that said"]],
+    [/\byear-over-year\b/gi, ["from the prior year", "versus last year", "compared to a year ago"]],
+    [/\bcompared with\b/gi, ["versus", "against"]],
+    [/\bdriven (?:primarily )?by\b/gi, ["fueled by", "pushed by", "led by"]],
     [/\bartificial intelligence\b/gi, ["AI"]],
     [/\bmachine learning\b/gi, ["ML"]],
-    [/\bfiscal year\b/gi, ["the fiscal year","that fiscal year"]],
-    [/\boperating income\b/gi, ["operating profit","operating earnings"]],
-    [/\bnet income\b/gi, ["net profit","bottom-line earnings"]],
-    [/\bcloud services\b/gi, ["cloud products","cloud offerings"]],
-    [/\binfrastructure adoption\b/gi, ["infrastructure growth","infrastructure expansion"]],
-    [/\bcommercial bookings\b/gi, ["business bookings","enterprise contracts"]],
-    [/\bsuggesting\b/gi, ["pointing to","indicating","showing"]],
-    [/\bdespite\b/gi, ["even with","in spite of"]],
-    [/\bmeanwhile\b/gi, ["at the same time","separately","on another front"]],
-    [/\brepresenting\b/gi, ["marking","reflecting","amounting to"]],
-    [/\bimproved from\b/gi, ["moved up from","climbed from","rose from"]],
-    [/\brose from\b/gi, ["climbed from","jumped from","moved up from"]],
+    [/\bfiscal year\b/gi, ["fiscal year"]],
+    [/\boperating income\b/gi, ["operating profit", "operating earnings"]],
+    [/\bnet income\b/gi, ["net profit", "bottom-line earnings"]],
+    [/\bcloud services\b/gi, ["cloud products", "cloud offerings"]],
+    [/\bcommercial bookings\b/gi, ["business bookings", "enterprise contracts"]],
+    [/\bsuggesting\b/gi, ["pointing to", "indicating", "showing"]],
+    [/\bdespite\b/gi, ["even with", "in spite of"]],
+    [/\bmeanwhile\b/gi, ["at the same time", "separately"]],
+    [/\brepresenting\b/gi, ["marking", "reflecting", "amounting to"]],
+    [/\bimproved from\b/gi, ["moved up from", "climbed from"]],
+    [/\brose from\b/gi, ["climbed from", "jumped from"]],
+    [/\bstated that\b/gi, ["noted that", "said that", "confirmed that"]],
+    [/\bexpanded\b/gi, ["grew", "widened", "increased"]],
+    [/\bcapabilities\b/gi, ["capacity", "abilities", "strengths"]],
   ];
 
   pools.forEach(([pattern, replacement]) => {
-    if (typeof replacement === "function") {
-      s = s.replace(pattern, replacement);
-    } else {
-      s = s.replace(pattern, () => pick(replacement));
-    }
+    s = s.replace(pattern, () => pick(replacement));
   });
 
   return s;
 }
 
-function restructureOnce(s) {
-  if (Math.random() > 0.45) return s;
-
-  const openers = [
-    "In fact,",
-    "Notably,",
-    "As it stands,",
-    "To that point,",
-    "Put simply,",
-    "On balance,",
-    "At its core,",
-    "In practice,",
-    "By any measure,",
-    "Taken together,"
-  ];
-
-  s = s.replace(/^(That said|Also|And|But|Meanwhile|Furthermore|Moreover)[,\s]+/i, "");
-  const opener = pick(openers);
-  return opener + " " + s.charAt(0).toLowerCase() + s.slice(1);
-}
-
 function shuffleMiddle(sentences) {
   if (sentences.length < 4) return sentences;
   const mid = Math.floor(sentences.length / 2);
-  const offset = Math.random() > 0.5 ? 1 : -1;
-  const swap = mid + offset;
+  const swap = mid + (Math.random() > 0.5 ? 1 : -1);
   if (swap > 0 && swap < sentences.length - 1) {
     [sentences[mid], sentences[swap]] = [sentences[swap], sentences[mid]];
   }
@@ -146,26 +146,37 @@ function applyBurstiness(sentences) {
   return result;
 }
 
-function applyToneConnectors(sentences, mode) {
+function applyToneConnector(sentences, mode) {
   if (sentences.length < 2) return sentences;
 
   const connectors = {
-    "data-safe": ["The numbers show that", "Looking at the data,", "The figures make clear that"],
-    academic:    ["This suggests that", "The evidence points to the fact that", "Analysis indicates that"],
-    business:    ["The bottom line here is that", "From a results standpoint,", "In practical terms,"],
-    executive:   ["The key takeaway is that", "At a high level,", "What this means for the business is that"],
-    resume:      ["This demonstrates that", "A clear example of this is that", "The impact here is that"],
-    plain:       ["Simply put,", "What this means is that", "In plain terms,"]
+    "data-safe": ["The numbers show that", "The data makes clear that", "Taken together,"],
+    academic:    ["This suggests that", "Analysis indicates that", "The evidence points to the fact that"],
+    business:    ["The bottom line is that", "In practical terms,", "From a results standpoint,"],
+    executive:   ["The key takeaway is that", "At a high level,", "What this means is that"],
+    resume:      ["This demonstrates that", "The impact here is that", "Worth highlighting,"],
+    plain:       ["Simply put,", "What this means is", "In plain terms,"]
   };
 
   const list = connectors[mode] || connectors["plain"];
   const last = sentences.length - 1;
-  let s = sentences[last];
-  s = s.replace(/^(Worth noting|Tied to that|On that front|Digging into|Looking more closely|Notably,|In fact,|As it stands,|To that point,|Put simply,|On balance,|At its core,|In practice,|By any measure,|Taken together,)[,\s]*/i, "");
+
+  // Strip any existing opener before applying connector
+  let s = stripOpener(sentences[last]);
   s = s.charAt(0).toLowerCase() + s.slice(1);
   sentences[last] = pick(list) + " " + s;
 
   return sentences;
+}
+
+function finalClean(text) {
+  return text
+    .replace(/\b(\w+)\s+\1\b/gi, "$1")        // remove doubled words
+    .replace(/\bthe the\b/gi, "the")           // catch "the the"
+    .replace(/\s+/g, " ")
+    .replace(/\s+([.,;:!?])/g, "$1")
+    .replace(/([.!?])\s*([a-z])/g, (m, p, q) => p + " " + q.toUpperCase())
+    .trim();
 }
 
 function findMidComma(s) {
