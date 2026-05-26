@@ -67,18 +67,6 @@ function extractProtectedData(text) {
   return found;
 }
 
-function buildDataWarning(originalText, finalText) {
-  if (typeof finalText !== "string") return "";
-  const originalData = extractProtectedData(originalText);
-  const missing = originalData.filter(function (item) {
-    return !finalText.includes(item);
-  });
-  if (missing.length > 0) {
-    return "\n\n⚠ DATA CHECK: Some numbers may not have been preserved. Please verify against your original.";
-  }
-  return "\n\n✓ Numbers preserved.";
-}
-
 function setButtonLoading(isLoading) {
   const button = document.getElementById("humanizeBtn");
   if (!button) return;
@@ -124,8 +112,7 @@ async function humanizeText() {
       return;
     }
 
-    const warning = buildDataWarning(originalInput, humanized);
-    output.value = humanized + warning;
+    output.value = humanized;
     lastHumanizedText = humanized;
 
     const used = parseInt(localStorage.getItem("rewriteCountUsed") || "0");
