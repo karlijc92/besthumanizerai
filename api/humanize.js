@@ -13,7 +13,10 @@ export default async function handler(req, res) {
     const pass1 = await callClaude(buildPrompt(mode, text));
     if (!pass1) return res.status(500).json({ error: "Rewrite failed" });
 
-    const final = cleanUp(pass1);
+    const pass2 = await callClaude(buildBreakPrompt(pass1));
+    if (!pass2) return res.status(500).json({ error: "Pass 2 failed" });
+
+    const final = cleanUp(pass2);
     return res.status(200).json({ result: final });
 
   } catch (e) {
@@ -56,10 +59,8 @@ function buildPrompt(mode, text) {
 
 To achieve this you MUST:
 - Use highly varied sentence structure — alternate between short punchy sentences and longer detailed ones unpredictably
-- Use first and third person perspective shifts where natural
 - Include specific concrete observations that show genuine understanding
-- Use industry-specific vocabulary naturally, not generically
-- Reference cause-and-effect relationships in your own words
+- Use industry-specific vocabulary naturally
 - Occasionally use a dash — like this — or a parenthetical (like this) for natural rhythm
 - Use active voice throughout
 - Write in distinct paragraphs of varying length — some one sentence, some three or four
@@ -75,6 +76,21 @@ You MUST NOT:
 - Return anything except the rewritten text itself
 
 TEXT TO REWRITE:
+${text}`;
+}
+
+function buildBreakPrompt(text) {
+  return `You are an expert editor. Take the text below and make these specific changes to break any remaining AI detection patterns:
+
+1. Find the 3 longest sentences and split each into two shorter ones
+2. Find 2 short sentences and merge them into one flowing sentence
+3. Add one rhetorical question somewhere natural in the text
+4. Replace any remaining formal transitions with casual ones
+5. Make sure every paragraph is a different length from the ones around it
+6. Keep ALL numbers, percentages, dollar amounts, years, and company names exactly as they are
+7. Return ONLY the edited text — no explanation
+
+TEXT:
 ${text}`;
 }
 
