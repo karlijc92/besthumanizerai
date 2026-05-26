@@ -3,56 +3,204 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <title>BestHumanizerAI</title>
-
+  <title>BestHumanizerAI — Humanize Data-Heavy Writing Without Changing the Numbers</title>
   <link rel="stylesheet" href="style.css" />
-</head>
+  <style>
+    .features-section {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 70px 24px;
+    }
 
+    .features-section h2 {
+      text-align: center;
+      font-size: 34px;
+      margin-bottom: 12px;
+      color: #111827;
+    }
+
+    .features-section .section-sub {
+      text-align: center;
+      font-size: 17px;
+      color: #6b7280;
+      margin-bottom: 48px;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+
+    .feature-card {
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 18px;
+      padding: 28px 24px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    }
+
+    .feature-card .icon {
+      font-size: 28px;
+      margin-bottom: 14px;
+    }
+
+    .feature-card h3 {
+      font-size: 18px;
+      color: #111827;
+      margin-bottom: 8px;
+    }
+
+    .feature-card p {
+      font-size: 15px;
+      color: #6b7280;
+      line-height: 1.6;
+    }
+
+    .who-section {
+      background: #f9fafb;
+      padding: 70px 24px;
+    }
+
+    .who-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .who-inner h2 {
+      text-align: center;
+      font-size: 34px;
+      color: #111827;
+      margin-bottom: 12px;
+    }
+
+    .who-inner .section-sub {
+      text-align: center;
+      font-size: 17px;
+      color: #6b7280;
+      margin-bottom: 48px;
+    }
+
+    .who-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .who-card {
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 18px;
+      padding: 26px 22px;
+      text-align: center;
+    }
+
+    .who-card .icon {
+      font-size: 30px;
+      margin-bottom: 12px;
+    }
+
+    .who-card h3 {
+      font-size: 17px;
+      color: #111827;
+      margin-bottom: 6px;
+    }
+
+    .who-card p {
+      font-size: 14px;
+      color: #6b7280;
+      line-height: 1.5;
+    }
+
+    .testimonial-section {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 70px 24px;
+      text-align: center;
+    }
+
+    .testimonial-section h2 {
+      font-size: 34px;
+      color: #111827;
+      margin-bottom: 40px;
+    }
+
+    .testimonial-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+
+    .testimonial-card {
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 18px;
+      padding: 26px 22px;
+      text-align: left;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+    }
+
+    .testimonial-card p {
+      font-size: 15px;
+      color: #374151;
+      line-height: 1.6;
+      margin-bottom: 16px;
+      font-style: italic;
+    }
+
+    .testimonial-card .author {
+      font-size: 13px;
+      font-weight: 700;
+      color: #111827;
+    }
+
+    .testimonial-card .role {
+      font-size: 12px;
+      color: #9ca3af;
+    }
+
+    .cta-section {
+      background: #111827;
+      padding: 70px 24px;
+      text-align: center;
+    }
+
+    .cta-section h2 {
+      font-size: 36px;
+      color: #ffffff;
+      margin-bottom: 16px;
+    }
+
+    .cta-section p {
+      font-size: 18px;
+      color: #9ca3af;
+      margin-bottom: 32px;
+    }
+
+    .cta-section a button {
+      background: #ffffff;
+      color: #111827;
+      border: none;
+      padding: 16px 40px;
+      font-size: 17px;
+      font-weight: 700;
+      border-radius: 14px;
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+
+    .cta-section a button:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+
+    @media (max-width: 900px) {
+      .features-grid, .who-grid, .testimonial-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
 <body>
 
-  <nav class="navbar">
-
-    <div class="logo">
-      BestHumanizerAI
-    </div>
-
-    <div class="nav-links">
-      <a href="index.html">Home</a>
-      <a href="tool.html">Tool</a>
-      <a href="pricing.html">Pricing</a>
-      <a href="features.html">Features</a>
-      <a href="about.html">About</a>
-    </div>
-
-  </nav>
-
-  <section class="hero">
-
-    <h1>
-      Humanize Data-Heavy Writing Without Changing the Numbers
-    </h1>
-
-    <p>
-      Rewrite finance papers, analyst reports, academic writing, resumes, and business documents while protecting important numbers, percentages, citations, and meaning.
-    </p>
-
-    <a href="tool.html">
-      <button>Try The Tool</button>
-    </a>
-
-  </section>
-
-  <section class="pricing-box">
-
-    <h2>Why BestHumanizerAI?</h2>
-
-    <p>
-      Most AI humanizers accidentally change facts, calculations, or statistics.
-      BestHumanizerAI is designed specifically for data-heavy writing where accuracy matters.
-    </p>
-
-  </section>
-
-</body>
-</html>
+  <nav c
