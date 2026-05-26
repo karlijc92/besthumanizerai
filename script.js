@@ -1,174 +1,105 @@
-const FREE_REWRITE_LIMIT = 999999;
-const FREE_CHARACTER_LIMIT = 1000;
-
-const BASIC_LINK = "https://buy.stripe.com/6oU28sc8J50m6GG0RpeME0j";
-const PRO_LINK = "https://buy.stripe.com/14AfZi8WxcsOd547fNeME0k";
-const PREMIUM_LINK = "https://buy.stripe.com/7sY8wQ0q1akG6GGcA7eME0l";
-
-let lastHumanizedText = "";
-
-document.addEventListener("DOMContentLoaded", function () {
-  initializeUsage();
-
-  const input = document.getElementById("inputText");
-  const button = document.getElementById("humanizeBtn");
-  const copyButton = document.getElementById("copyBtn");
-
-  if (input) {
-    input.addEventListener("input", function () {
-      lastHumanizedText = "";
-      updateUsageDisplay();
-    });
-  }
-
-  if (button) {
-    button.addEventListener("click", humanizeText);
-  }
-
-  if (copyButton) {
-    copyButton.addEventListener("click", copyOutputText);
-  }
-});
-
-function initializeUsage() {
-  if (!localStorage.getItem("freeRewriteCount")) {
-    localStorage.setItem("freeRewriteCount", "0");
-  }
-
-  updateUsageDisplay();
-}
-
-function updateUsageDisplay() {
-  const input = document.getElementById("inputText");
-  const rewriteCount = document.getElementById("rewriteCount");
-  const charCount = document.getElementById("charCount");
-
-  if (!input || !rewriteCount || !charCount) return;
-
-  rewriteCount.innerText = "Testing mode: unlimited rewrites";
-  charCount.innerText = `${input.value.length.toLocaleString()} characters`;
-}
-
-function extractProtectedData(text) {
-  const pattern =
-    /\$?\d+(?:,\d{3})*(?:\.\d+)?\s?(?:billion|million|thousand|trillion)?%?|\b\d+(?:\.\d+)?%|\b(?:19|20)\d{2}\b|\([A-Za-z]+,\s?\d{4}\)/gi;
-
-  return text.match(pattern) || [];
-}
-
-function protectDataBeforeRewrite(text) {
-  const items = [];
-
-  const pattern =
-    /\$?\d+(?:,\d{3})*(?:\.\d+)?\s?(?:billion|million|thousand|trillion)?%?|\b\d+(?:\.\d+)?%|\b(?:19|20)\d{2}\b|\([A-Za-z]+,\s?\d{4}\)/gi;
-
-  const protectedText = text.replace(pattern, function (match) {
-    const token = `__DATA_${items.length}__`;
-    items.push({ token, value: match });
-    return token;
-  });
-
-  return { text: protectedText, items };
-}
-
-function restoreProtectedData(text, items) {
-  let restored = text;
-
-  items.forEach(function (item) {
-    restored = restored.split(item.token).join(item.value);
-  });
-
-  return restored;
-}
-
-function splitSentences(text) {
-  return text
-    .replace(/\s+/g, " ")
-    .trim()
-    .split(/(?<=[.!?])\s+/)
-    .map(function (sentence) {
-      return sentence.trim();
-    })
-    .filter(Boolean);
-}
-
 function aggressiveHumanize(text, mode) {
-  let sentences = splitSentences(text);
 
-  if (sentences.length === 0) return "";
+  let working = text;
 
-  const openers = [
-    "What matters here is that",
-    "The bigger point is that",
-    "From a practical standpoint,",
-    "The useful takeaway is that",
-    "Looking at the numbers,",
-    "This matters because",
-    "In plain terms,",
-    "The result is important because"
+  const introStarters = [
+    "From a broader perspective,",
+    "Looking at the situation overall,",
+    "In practical terms,",
+    "What stands out most is that",
+    "The larger takeaway is that",
+    "At the same time,",
+    "From an operational standpoint,",
+    "What becomes clear here is that"
   ];
 
-  const softenedVerbs = [
+  const transitions = [
+    "At the same time,",
+    "Meanwhile,",
+    "In addition,",
+    "Because of this,",
+    "As a result,",
+    "Even so,",
+    "That said,",
+    "On top of that,"
+  ];
+
+  const humanPhrases = [
     ["demonstrates", "points to"],
     ["demonstrate", "point to"],
     ["indicates", "suggests"],
     ["indicate", "suggest"],
-    ["illustrates", "shows"],
-    ["utilizes", "uses"],
-    ["utilize", "use"],
-    ["significant", "meaningful"],
-    ["substantial", "large"],
-    ["therefore", "as a result"],
+    ["shows", "reflects"],
+    ["show", "reflect"],
+    ["therefore", "because of this"],
     ["furthermore", "also"],
-    ["moreover", "also"],
-    ["overall,", ""],
-    ["in conclusion,", ""]
+    ["moreover", "on top of that"],
+    ["significant", "meaningful"],
+    ["substantial", "major"],
+    ["utilize", "use"],
+    ["utilizes", "uses"],
+    ["in conclusion", "overall"],
+    ["the company", "the business"],
+    ["the data", "the figures"]
   ];
 
-  let rewritten = sentences.map(function (sentence, index) {
-    let s = sentence;
-
-    softenedVerbs.forEach(function (pair) {
-      const regex = new RegExp("\\b" + pair[0] + "\\b", "gi");
-      s = s.replace(regex, pair[1]);
-    });
-
-    s = s.replace(/^The company /i, "The business ");
-    s = s.replace(/^The data /i, "The numbers ");
-    s = s.replace(/^This shows that /i, "This points to ");
-    s = s.replace(/^This suggests that /i, "This points to ");
-
-    if (index === 0) {
-      return s;
-    }
-
-    const opener = openers[index % openers.length];
-
-    if (index % 3 === 1) {
-      return `${opener} ${lowerFirstLetter(s)}`;
-    }
-
-    if (index % 3 === 2) {
-      return `${s} That shift gives the paragraph a more grounded, less mechanical feel.`;
-    }
-
-    return s;
+  humanPhrases.forEach(function(pair) {
+    const regex = new RegExp("\\b" + pair[0] + "\\b", "gi");
+    working = working.replace(regex, pair[1]);
   });
 
-  let result = rewritten.join(" ");
+  let sentences = working
+    .replace(/\s+/g, " ")
+    .trim()
+    .split(/(?<=[.!?])\s+/)
+    .filter(Boolean);
 
-  result = restructureParagraph(result, mode);
+  let rebuilt = [];
 
-  return result;
-}
+  sentences.forEach(function(sentence, index) {
 
-function restructureParagraph(text, mode) {
-  let result = text;
+    let s = sentence.trim();
 
-  result = result.replace(
-    /\bRevenue\b/gi,
-    mode === "business" || mode === "executive" ? "Sales" : "Revenue"
-  );
+    if (index === 0) {
+
+      if (Math.random() > 0.5) {
+        s = introStarters[Math.floor(Math.random() * introStarters.length)] + " " + lowerFirstLetter(s);
+      }
+
+      rebuilt.push(s);
+      return;
+    }
+
+    if (index % 2 === 0) {
+
+      const transition =
+        transitions[Math.floor(Math.random() * transitions.length)];
+
+      s = transition + " " + lowerFirstLetter(s);
+    }
+
+    if (s.length > 140) {
+
+      const commaParts = s.split(",");
+
+      if (commaParts.length >= 3) {
+
+        const firstHalf =
+          commaParts.slice(0, 2).join(",").trim();
+
+        const secondHalf =
+          commaParts.slice(2).join(",").trim();
+
+        s =
+          firstHalf + ". " +
+          capitalizeFirst(secondHalf);
+      }
+    }
+
+    rebuilt.push(s);
+  });
+
+  let result = rebuilt.join(" ");
 
   result = result.replace(
     /\bnet income improved\b/gi,
@@ -181,108 +112,47 @@ function restructureParagraph(text, mode) {
   );
 
   result = result.replace(
+    /\bcustomer retention improved\b/gi,
+    "customer retention climbed"
+  );
+
+  result = result.replace(
     /\bwhich suggests\b/gi,
     "which points to"
   );
 
+  result = result.replace(
+    /\brepresenting a\b/gi,
+    "which amounted to a"
+  );
+
+  result = result.replace(
+    /\byear over year\b/gi,
+    "compared with the prior year"
+  );
+
   if (mode === "academic") {
-    result = result.replace(/\bbig\b/gi, "meaningful");
-    result = result.replace(/\bshows\b/gi, "suggests");
+
+    result = result.replace(/\bmajor\b/gi, "substantial");
+    result = result.replace(/\breflects\b/gi, "suggests");
   }
 
   if (mode === "plain") {
-    result = result.replace(/\bmaterial\b/gi, "important");
-    result = result.replace(/\bmeaningful\b/gi, "important");
+
+    result = result.replace(/\bsubstantial\b/gi, "large");
+    result = result.replace(/\boperational standpoint\b/gi, "practical standpoint");
   }
+
+  result = result.replace(/\s+/g, " ").trim();
 
   return result;
 }
 
-function lowerFirstLetter(text) {
-  if (!text) return text;
-  return text.charAt(0).toLowerCase() + text.slice(1);
-}
+function capitalizeFirst(text) {
 
-function finalCleanup(text) {
-  let cleaned = text;
-
-  cleaned = cleaned.replace(/\s+/g, " ").trim();
-
-  cleaned = cleaned.replace(/What matters here is that what matters here is that/gi, "What matters here is that");
-  cleaned = cleaned.replace(/The bigger point is that the bigger point is that/gi, "The bigger point is that");
-  cleaned = cleaned.replace(/From a practical standpoint, from a practical standpoint,/gi, "From a practical standpoint,");
-  cleaned = cleaned.replace(/This matters because this matters because/gi, "This matters because");
-
-  cleaned = cleaned.replace(/\s+([.,!?])/g, "$1");
-  cleaned = cleaned.replace(/\.\s+That shift gives the paragraph a more grounded, less mechanical feel\.\s+That shift gives the paragraph a more grounded, less mechanical feel\./gi, ".");
-
-  return cleaned;
-}
-
-function buildDataWarning(originalText, finalText) {
-  const originalData = extractProtectedData(originalText);
-  const finalData = extractProtectedData(finalText);
-
-  const missingItems = originalData.filter(function (item) {
-    return !finalData.includes(item);
-  });
-
-  if (missingItems.length > 0) {
-    return "\n\nDATA CHECK WARNING: Possible number mismatch found.";
+  if (!text || text.length === 0) {
+    return text;
   }
 
-  return "";
-}
-
-function humanizeText() {
-  const inputElement = document.getElementById("inputText");
-  const output = document.getElementById("outputText");
-  const rewriteModeElement = document.getElementById("rewriteMode");
-  const upgradeMessage = document.getElementById("upgradeMessage");
-
-  if (!inputElement || !output || !rewriteModeElement || !upgradeMessage) {
-    alert("Tool setup error. Please check tool.html and script.js.");
-    return;
-  }
-
-  const typedInput = inputElement.value.trim();
-  const rewriteMode = rewriteModeElement.value;
-
-  if (!typedInput) {
-    output.value = "Please paste text first.";
-    return;
-  }
-
-  if (typedInput.length > FREE_CHARACTER_LIMIT) {
-    output.value = `Free testing is limited to ${FREE_CHARACTER_LIMIT.toLocaleString()} characters.`;
-    return;
-  }
-
-  upgradeMessage.innerHTML = "";
-
-  const textToRewrite = lastHumanizedText || typedInput;
-
-  const protectedData = protectDataBeforeRewrite(textToRewrite);
-
-  let humanized = aggressiveHumanize(protectedData.text, rewriteMode);
-  humanized = restoreProtectedData(humanized, protectedData.items);
-  humanized = finalCleanup(humanized);
-
-  const warning = buildDataWarning(typedInput, humanized);
-
-  output.value = humanized + warning;
-  lastHumanizedText = humanized;
-
-  const currentCount = parseInt(localStorage.getItem("freeRewriteCount") || "0");
-  localStorage.setItem("freeRewriteCount", String(currentCount + 1));
-
-  updateUsageDisplay();
-}
-
-function copyOutputText() {
-  const output = document.getElementById("outputText");
-
-  if (!output || !output.value.trim()) return;
-
-  navigator.clipboard.writeText(output.value);
+  return text.charAt(0).toUpperCase() + text.slice(1);
 }
