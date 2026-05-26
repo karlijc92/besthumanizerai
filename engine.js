@@ -1,205 +1,185 @@
 function aggressiveHumanize(text, mode) {
   if (!text || typeof text !== "string") return "";
 
-  var cleaned = text.replace(/\s+/g, " ").trim();
-  var sentences = splitSentences(cleaned);
-  if (sentences.length === 0) return cleaned;
+  const protected_ = lockData(text);
+  let sentences = splitSentences(protected_.text);
 
-  sentences = sentences.map(function(s) { return transformSentence(s, mode); });
-  sentences = varyStructure(sentences, mode);
-  sentences = addBurstiness(sentences);
+  sentences = sentences.map(s => rewriteSentence(s, mode));
+  sentences = shuffleMiddle(sentences);
+  sentences = applyBurstiness(sentences);
+  sentences = applyToneConnectors(sentences, mode);
 
-  var result = sentences.join(" ").replace(/\s+/g, " ").trim();
+  let result = sentences.join(" ").replace(/\s+/g, " ").trim();
+  result = restoreData(result, protected_.map);
   if (!/[.!?]$/.test(result)) result += ".";
   return result;
 }
 
-function splitSentences(text) {
-  var raw = text.match(/[^.!?]+[.!?]+["']?|[^.!?]+$/g) || [text];
-  return raw
-    .map(function(s) { return s.trim(); })
-    .filter(function(s) { return s.length > 10; });
+function lockData(text) {
+  const map = [];
+  const locked = text.replace(
+    /\$?\d+(?:,\d{3})*(?:\.\d+)?\s?(?:billion|million|trillion|thousand)?%?|\b\d+(?:\.\d+)?%|\b(?:19|20)\d{2}\b|\bQ[1-4]\s?(?:19|20)\d{2}\b|\([A-Za-z]+,\s?\d{4}\)/gi,
+    match => {
+      const token = `{{D${map.length}}}`;
+      map.push({ token, value: match });
+      return token;
+    }
+  );
+  return { text: locked, map };
 }
 
-function transformSentence(sentence, mode) {
-  var s = sentence;
+function restoreData(text, map) {
+  let out = text;
+  map.forEach(item => {
+    out = out.split(item.token).join(item.value);
+  });
+  return out;
+}
 
-  var swaps = [
-    ["\\butilize\\b", "use"],
-    ["\\butilizes\\b", "uses"],
-    ["\\butilized\\b", "used"],
-    ["\\bdemonstrates\\b", "shows"],
-    ["\\bdemonstrate\\b", "show"],
-    ["\\bindicate\\b", "point to"],
-    ["\\bindicates\\b", "points to"],
-    ["\\bdecreased\\b", "dropped"],
-    ["\\bsignificant\\b", "notable"],
-    ["\\bsignificantly\\b", "noticeably"],
-    ["\\bprimarily\\b", "mainly"],
-    ["\\bcommence\\b", "start"],
-    ["\\bsubsequently\\b", "then"],
-    ["\\bnevertheless\\b", "even so"],
-    ["\\bfurthermore\\b", "beyond that"],
-    ["\\bmoreover\\b", "on top of that"],
-    ["\\bhowever\\b", "that said"],
-    ["\\bin addition\\b", "also"],
-    ["\\bprior to\\b", "before"],
-    ["\\bin order to\\b", "to"],
-    ["\\bdue to the fact that\\b", "because"],
-    ["\\bit is worth noting that\\b", "notably"],
-    ["\\boperating expenses\\b", "day-to-day costs"],
-    ["\\bgross margin\\b", "profit margin"],
-    ["\\bfree cash flow\\b", "available cash"],
-    ["\\bnet revenue\\b", "total revenue"],
-    ["\\byear-over-year\\b", "from the prior year"],
-    ["\\bcompared with\\b", "versus"],
-    ["\\bcompared to the prior fiscal year\\b", "from a year earlier"],
-    ["\\bdriven primarily by\\b", "fueled mainly by"],
-    ["\\bdriven by\\b", "fueled by"],
-    ["\\bexpanded\\b", "broader"],
-    ["\\binfrastructure adoption\\b", "infrastructure growth"],
-    ["\\bstating that\\b", "noting that"],
-    ["\\bstated that\\b", "noted that"],
-    ["\\brose from\\b", "climbed from"],
-    ["\\bimproved from\\b", "moved up from"],
-    ["\\brepresenting a\\b", "a"],
-    ["\\bwhile\\b", "and"],
-    ["\\bmeanwhile\\b", "at the same time"],
-    ["\\bsuggesting\\b", "pointing to"],
-    ["\\bdespite\\b", "even with"],
-    ["\\bcapabilities\\b", "capacity"],
-    ["\\binvestments in\\b", "spending on"],
-    ["\\bcommercial bookings\\b", "business bookings"],
-    ["\\bclimbed\\b", "rose"],
-    ["\\bmanagement also stated\\b", "the company also noted"],
-    ["\\bfiscal year\\b", "the fiscal year"],
-    ["\\bcloud services\\b", "cloud products"],
-    ["\\benterprise\\b", "business"],
-    ["\\bartificial intelligence\\b", "AI"],
-    ["\\bmachine learning\\b", "ML"]
+function splitSentences(text) {
+  return (text.match(/[^.!?]+[.!?]+["']?|[^.!?]+$/g) || [text])
+    .map(s => s.trim())
+    .filter(s => s.length > 8);
+}
+
+function rewriteSentence(s, mode) {
+  s = applySwaps(s);
+  s = restructureOnce(s);
+  return s;
+}
+
+function applySwaps(s) {
+  const pools = [
+    [/\butilize[sd]?\b/gi, ["use", "apply", "employ"]],
+    [/\bdemonstrate[sd]?\b/gi, ["show", "reveal", "reflect"]],
+    [/\bindicate[sd]?\b/gi, ["point to", "suggest", "show"]],
+    [/\bsignificant(ly)?\b/gi, (m, p) => p ? pick(["notably","meaningfully","considerably"]) : pick(["notable","meaningful","considerable"])],
+    [/\bprimarily\b/gi, ["mainly","largely","mostly"]],
+    [/\bfurthermore\b/gi, ["beyond that","on top of that","building on this"]],
+    [/\bmoreover\b/gi, ["on top of that","adding to this","beyond that"]],
+    [/\bhowever\b/gi, ["that said","even so","still"]],
+    [/\bin addition\b/gi, ["also","on top of that","as well"]],
+    [/\bprior to\b/gi, ["before","ahead of"]],
+    [/\bin order to\b/gi, ["to","so as to"]],
+    [/\bdue to the fact that\b/gi, ["because","since","given that"]],
+    [/\bsubsequently\b/gi, ["after that","then","following this"]],
+    [/\bnevertheless\b/gi, ["even so","still","that said"]],
+    [/\bcommenced\b/gi, ["started","began","kicked off"]],
+    [/\byear-over-year\b/gi, ["from the prior year","versus last year","compared to a year ago"]],
+    [/\bcompared with\b/gi, ["versus","against","next to"]],
+    [/\bdriven (?:primarily )?by\b/gi, ["fueled by","pushed by","led by"]],
+    [/\bartificial intelligence\b/gi, ["AI"]],
+    [/\bmachine learning\b/gi, ["ML"]],
+    [/\bfiscal year\b/gi, ["the fiscal year","that fiscal year"]],
+    [/\boperating income\b/gi, ["operating profit","operating earnings"]],
+    [/\bnet income\b/gi, ["net profit","bottom-line earnings"]],
+    [/\bcloud services\b/gi, ["cloud products","cloud offerings"]],
+    [/\binfrastructure adoption\b/gi, ["infrastructure growth","infrastructure expansion"]],
+    [/\bcommercial bookings\b/gi, ["business bookings","enterprise contracts"]],
+    [/\bsuggesting\b/gi, ["pointing to","indicating","showing"]],
+    [/\bdespite\b/gi, ["even with","in spite of"]],
+    [/\bmeanwhile\b/gi, ["at the same time","separately","on another front"]],
+    [/\brepresenting\b/gi, ["marking","reflecting","amounting to"]],
+    [/\bimproved from\b/gi, ["moved up from","climbed from","rose from"]],
+    [/\brose from\b/gi, ["climbed from","jumped from","moved up from"]],
   ];
 
-  swaps.forEach(function(pair) {
-    s = s.replace(new RegExp(pair[0], "gi"), pair[1]);
+  pools.forEach(([pattern, replacement]) => {
+    if (typeof replacement === "function") {
+      s = s.replace(pattern, replacement);
+    } else {
+      s = s.replace(pattern, () => pick(replacement));
+    }
   });
 
-  // Restructure sentences that start with a number or company name
-  s = restructure(s, mode);
-
-  if (mode === "academic") {
-    s = s.replace(/\bshows\b/g, "suggests");
-    s = s.replace(/\bpoints to\b/g, "indicates");
-  }
-  if (mode === "business" || mode === "executive") {
-    s = s.replace(/\bdropped\b/g, "declined");
-  }
-  if (mode === "plain") {
-    s = s.replace(/\bsuggests\b/g, "means");
-    s = s.replace(/\bindicates\b/g, "shows");
-  }
-
   return s;
 }
 
-function restructure(s, mode) {
-  // Pattern: "X verb Y" → flip with a lead-in phrase
-  var leadIns = [
-    "Worth noting here —",
-    "On that front,",
-    "As part of that picture,",
-    "Digging into the detail,",
-    "Looking more closely,",
-    "Tied to that,"
+function restructureOnce(s) {
+  if (Math.random() > 0.45) return s;
+
+  const openers = [
+    "In fact,",
+    "Notably,",
+    "As it stands,",
+    "To that point,",
+    "Put simply,",
+    "On balance,",
+    "At its core,",
+    "In practice,",
+    "By any measure,",
+    "Taken together,"
   ];
 
-  // Only restructure some sentences to avoid repetition
-  if (Math.random() > 0.5) return s;
-
-  var lead = leadIns[Math.floor(Math.random() * leadIns.length)];
-
-  // Strip any existing opener
-  s = s.replace(/^(That said|Also|And|But|At the same time)[,\s]+/i, "");
-
-  // Lowercase first letter after lead-in
-  s = lead + " " + s.charAt(0).toLowerCase() + s.slice(1);
-
-  return s;
+  s = s.replace(/^(That said|Also|And|But|Meanwhile|Furthermore|Moreover)[,\s]+/i, "");
+  const opener = pick(openers);
+  return opener + " " + s.charAt(0).toLowerCase() + s.slice(1);
 }
 
-function varyStructure(sentences, mode) {
+function shuffleMiddle(sentences) {
+  if (sentences.length < 4) return sentences;
+  const mid = Math.floor(sentences.length / 2);
+  const offset = Math.random() > 0.5 ? 1 : -1;
+  const swap = mid + offset;
+  if (swap > 0 && swap < sentences.length - 1) {
+    [sentences[mid], sentences[swap]] = [sentences[swap], sentences[mid]];
+  }
+  return sentences;
+}
+
+function applyBurstiness(sentences) {
+  const result = [];
+  sentences.forEach(s => {
+    if (s.length > 160 && s.indexOf(",") !== -1) {
+      const mid = findMidComma(s);
+      if (mid > 30 && mid < s.length - 30) {
+        let a = s.slice(0, mid).trim();
+        let b = s.slice(mid + 1).trim();
+        if (!/[.!?]$/.test(a)) a += ".";
+        b = b.charAt(0).toUpperCase() + b.slice(1);
+        result.push(a, b);
+        return;
+      }
+    }
+    result.push(s);
+  });
+  return result;
+}
+
+function applyToneConnectors(sentences, mode) {
   if (sentences.length < 2) return sentences;
 
-  var connectors = {
-    "data-safe": ["The figures point to", "Looking at the numbers,", "The data makes clear that"],
-    academic:    ["This suggests that", "The evidence indicates that", "Notably,"],
-    business:    ["From a business standpoint,", "In practical terms,", "The result here is that"],
-    executive:   ["The key takeaway is that", "Stepping back,", "At a high level,"],
-    resume:      ["This reflects", "A strong example here is that", "Worth highlighting,"],
-    plain:       ["Simply put,", "In plain terms,", "What this really means is"]
+  const connectors = {
+    "data-safe": ["The numbers show that", "Looking at the data,", "The figures make clear that"],
+    academic:    ["This suggests that", "The evidence points to the fact that", "Analysis indicates that"],
+    business:    ["The bottom line here is that", "From a results standpoint,", "In practical terms,"],
+    executive:   ["The key takeaway is that", "At a high level,", "What this means for the business is that"],
+    resume:      ["This demonstrates that", "A clear example of this is that", "The impact here is that"],
+    plain:       ["Simply put,", "What this means is that", "In plain terms,"]
   };
 
-  var list = connectors[mode] || connectors["plain"];
-  var pick = list[Math.floor(Math.random() * list.length)];
-
-  // Target the LAST sentence for a connector wrap — avoids doubling up on middle sentences
-  var targetIndex = sentences.length - 1;
-  var s = sentences[targetIndex];
-
-  // Remove any lead-in already added by restructure()
-  s = s.replace(/^(Worth noting here —|On that front,|As part of that picture,|Digging into the detail,|Looking more closely,|Tied to that,)\s*/i, "");
-  s = s.replace(/^(However|Furthermore|Moreover|Also|Additionally|That said)[,\s]+/i, "");
+  const list = connectors[mode] || connectors["plain"];
+  const last = sentences.length - 1;
+  let s = sentences[last];
+  s = s.replace(/^(Worth noting|Tied to that|On that front|Digging into|Looking more closely|Notably,|In fact,|As it stands,|To that point,|Put simply,|On balance,|At its core,|In practice,|By any measure,|Taken together,)[,\s]*/i, "");
   s = s.charAt(0).toLowerCase() + s.slice(1);
-
-  sentences[targetIndex] = pick + " " + s;
-
-  // Swap two middle sentences for unpredictability
-  if (sentences.length >= 4) {
-    var tmp = sentences[1];
-    sentences[1] = sentences[3];
-    sentences[3] = tmp;
-  }
+  sentences[last] = pick(list) + " " + s;
 
   return sentences;
 }
 
-function addBurstiness(sentences) {
-  var result = [];
-
-  for (var i = 0; i < sentences.length; i++) {
-    var s = sentences[i];
-
-    // Only split very long sentences that have a natural comma break
-    if (s.length > 180 && s.indexOf(",") !== -1) {
-      var mid = findMidComma(s);
-      if (mid > 30 && mid < s.length - 30) {
-        var partA = s.slice(0, mid).trim();
-        var partB = s.slice(mid + 1).trim();
-        partB = partB.charAt(0).toUpperCase() + partB.slice(1);
-        if (!/[.!?]$/.test(partA)) partA += ".";
-        result.push(partA);
-        result.push(partB);
-        continue;
-      }
-    }
-
-    result.push(s);
-  }
-
-  return result;
-}
-
 function findMidComma(s) {
-  var mid = Math.floor(s.length / 2);
-  var best = -1;
-  var minDist = s.length;
-  for (var i = 0; i < s.length; i++) {
+  const mid = Math.floor(s.length / 2);
+  let best = -1, minDist = s.length;
+  for (let i = 0; i < s.length; i++) {
     if (s[i] === ",") {
-      var dist = Math.abs(i - mid);
-      if (dist < minDist) {
-        minDist = dist;
-        best = i;
-      }
+      const dist = Math.abs(i - mid);
+      if (dist < minDist) { minDist = dist; best = i; }
     }
   }
   return best;
+}
+
+function pick(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
 }
