@@ -1,3 +1,6 @@
+// script.js — BestHumanizerAI
+
+const TESTING_MODE = true;
 const FREE_CHARACTER_LIMIT = 1000;
 
 let lastHumanizedText = "";
@@ -18,13 +21,8 @@ function initializeTool() {
     });
   }
 
-  if (button) {
-    button.onclick = humanizeText;
-  }
-
-  if (copyButton) {
-    copyButton.onclick = copyOutputText;
-  }
+  if (button) button.onclick = humanizeText;
+  if (copyButton) copyButton.onclick = copyOutputText;
 
   if (!localStorage.getItem("rewriteCountUsed")) {
     localStorage.setItem("rewriteCountUsed", "0");
@@ -37,85 +35,65 @@ function updateUsageDisplay() {
   const input = document.getElementById("inputText");
   const rewriteCount = document.getElementById("rewriteCount");
   const charCount = document.getElementById("charCount");
-
   const used = parseInt(localStorage.getItem("rewriteCountUsed") || "0");
 
   if (rewriteCount) {
     rewriteCount.innerText = `Rewrites used: ${used}`;
   }
-
   if (input && charCount) {
     charCount.innerText = `${input.value.length.toLocaleString()} characters`;
   }
 }
 
 function extractProtectedData(text) {
-  const pattern =
-    /\$?\d+(?:,\d{3})*(?:\.\d+)?\s?(?:billion|million|thousand|trillion)?%?|\b\d+(?:\.\d+)?%|\b(?:19|20)\d{2}\b|\([A-Za-z]+,\s?\d{4}\)/gi;
-
-  return text.match(pattern) || [];
-}
-
-function protectDataBeforeRewrite(text) {
-  const items = [];
-
-  const pattern =
-    /\$?\d+(?:,\d{3})*(?:\.\d+)?\s?(?:billion|million|thousand|trillion)?%?|\b\d+(?:\.\d+)?%|\b(?:19|20)\d{2}\b|\([A-Za-z]+,\s?\d{4}\)/gi;
-
-  const protectedText = text.replace(pattern, function (match) {
-    const token = `__DATA_${items.length}__`;
-    items.push({ token, value: match });
-    return token;
+  if (!text || typeof text !== "string") return [];
+  const patterns = [
+    /\$?\d+(?:,\d{3})*(?:\.\d+)?\s?(?:billion|million|thousand|trillion)?%?/gi,
+    /\d+(?:\.\d+)?%/g,
+    /\b(?:19|20)\d{2}\b/g,
+    /\bQ[1-4]\s?(?:19|20)\d{2}\b/gi,
+    /\([A-Za-z]+,\s?\d{4}\)/g
+  ];
+  const found = [];
+  patterns.forEach(function (pattern) {
+    const matches = text.match(pattern);
+    if (matches) {
+      matches.forEach(function (m) {
+        const clean = m.trim();
+        if (clean && !found.includes(clean)) found.push(clean);
+      });
+    }
   });
-
-  return { text: protectedText, items };
-}
-
-function restoreProtectedData(text, items) {
-  let restored = text;
-
-  items.forEach(function (item) {
-    restored = restored.split(item.token).join(item.value);
-  });
-
-  return restored;
-}
-
-function finalCleanup(text) {
-  return text
-    .replace(/\s+/g, " ")
-    .replace(/\s+([.,!?])/g, "$1")
-    .trim();
+  return found;
 }
 
 function buildDataWarning(originalText, finalText) {
+  if (typeof finalText !== "string") return "";
   const originalData = extractProtectedData(originalText);
-  const finalData = extractProtectedData(finalText);
-
-  const missingItems = originalData.filter(function (item) {
-    return !finalData.includes(item);
+  const missing = originalData.filter(function (item) {
+    return !finalText.includes(item);
   });
-
-  if (missingItems.length > 0) {
-    return "\n\nDATA CHECK WARNING: Possible number mismatch found.";
+  if (missing.length > 0) {
+    return "\n\n⚠ DATA CHECK: Some numbers may not have been preserved. Please verify against your original.";
   }
-
-  return "";
+  return "\n\n✓ Numbers preserved.";
 }
 
-function humanizeText() {
+function setButtonLoading(isLoading) {
+  const button = document.getElementById("humanizeBtn");
+  if (!button) return;
+  button.disabled = isLoading;
+  button.innerText = isLoading ? "Humanizing..." : "Humanize Text";
+}
+
+async function humanizeText() {
   const inputElement = document.getElementById("inputText");
   const output = document.getElementById("outputText");
   const rewriteModeElement = document.getElementById("rewriteMode");
   const upgradeMessage = document.getElementById("upgradeMessage");
 
-  if (!inputElement || !output || !rewriteModeElement || !upgradeMessage) {
+  if (!inputElement || !output || !rewriteModeElement) {
     alert("Tool setup error. Please check the page files.");
-    return;
-  }
-
-  if (typeof aggressiveHumanize !== "function") {
-    output.value = "Engine error: engine.js is not loading.";
     return;
   }
 
@@ -123,39 +101,53 @@ function humanizeText() {
   const rewriteMode = rewriteModeElement.value;
 
   if (!originalInput) {
-    output.value = "Please paste text first.";
+    output.value = "Please paste your text first.";
     return;
   }
 
-  if (originalInput.length > FREE_CHARACTER_LIMIT) {
-    output.value = `Free testing is limited to ${FREE_CHARACTER_LIMIT.toLocaleString()} characters.`;
+  if (!TESTING_MODE && originalInput.length > FREE_CHARACTER_LIMIT) {
+    output.value = `Free tier is limited to ${FREE_CHARACTER_LIMIT.toLocaleString()} characters.`;
     return;
   }
 
-  upgradeMessage.innerHTML = "";
+  if (upgradeMessage) upgradeMessage.innerHTML = "";
 
-  const textToRewrite = lastHumanizedText || originalInput;
-  const protectedData = protectDataBeforeRewrite(textToRewrite);
+  setButtonLoading(true);
+  output.value = "Rewriting... this takes a few seconds.";
 
-  let humanized = aggressiveHumanize(protectedData.text, rewriteMode);
-  humanized = restoreProtectedData(humanized, protectedData.items);
-  humanized = finalCleanup(humanized);
+  try {
+    const textToRewrite = lastHumanizedText || originalInput;
+    let humanized = await aggressiveHumanize(textToRewrite, rewriteMode);
 
-  const warning = buildDataWarning(originalInput, humanized);
+    if (typeof humanized !== "string") {
+      output.value = "Unexpected response. Please try again.";
+      return;
+    }
 
-  output.value = humanized + warning;
-  lastHumanizedText = humanized;
+    const warning = buildDataWarning(originalInput, humanized);
+    output.value = humanized + warning;
+    lastHumanizedText = humanized;
 
-  const used = parseInt(localStorage.getItem("rewriteCountUsed") || "0");
-  localStorage.setItem("rewriteCountUsed", String(used + 1));
+    const used = parseInt(localStorage.getItem("rewriteCountUsed") || "0");
+    localStorage.setItem("rewriteCountUsed", String(used + 1));
+    updateUsageDisplay();
 
-  updateUsageDisplay();
+  } catch (e) {
+    output.value = "Something went wrong. Please try again.";
+    console.error(e);
+  } finally {
+    setButtonLoading(false);
+  }
 }
 
 function copyOutputText() {
   const output = document.getElementById("outputText");
-
   if (!output || !output.value.trim()) return;
-
   navigator.clipboard.writeText(output.value);
+  const copyBtn = document.getElementById("copyBtn");
+  if (copyBtn) {
+    const original = copyBtn.innerText;
+    copyBtn.innerText = "Copied!";
+    setTimeout(function () { copyBtn.innerText = original; }, 1500);
+  }
 }
