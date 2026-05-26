@@ -3,19 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
   <title>Humanizer Tool | BestHumanizerAI</title>
-
   <link rel="stylesheet" href="style.css" />
-  <script src="engine.js" defer></script>
-  <script src="script.js" defer></script>
 </head>
-
 <body>
-
   <nav class="navbar">
     <div class="logo">BestHumanizerAI</div>
-
     <div class="nav-links">
       <a href="index.html">Home</a>
       <a href="tool.html">Tool</a>
@@ -39,7 +32,6 @@
       <div class="tool-card">
         <label for="inputText">Original Text</label>
         <textarea id="inputText" placeholder="Paste your paragraph here..." rows="10"></textarea>
-
         <div class="tool-options">
           <label for="rewriteMode">Rewrite Mode</label>
           <select id="rewriteMode">
@@ -51,26 +43,18 @@
             <option value="plain">Plain English</option>
           </select>
         </div>
-
         <div class="tool-info">
           <span id="charCount">0 characters</span>
-          <span id="rewriteCount">Free rewrites remaining: 3</span>
+          <span id="rewriteCount">Rewrites remaining: Unlimited (Testing)</span>
         </div>
-
-        <button id="humanizeBtn" type="button" onclick="humanizeText()">
-          Humanize Text
-        </button>
-
+        <button id="humanizeBtn" type="button">Humanize Text</button>
         <div id="upgradeMessage" class="upgrade-message"></div>
       </div>
 
       <div class="tool-card">
         <label for="outputText">Humanized Output</label>
         <textarea id="outputText" placeholder="Your humanized version will appear here..." rows="10" readonly></textarea>
-
-        <button id="copyBtn" type="button" onclick="copyOutputText()">
-          Copy Output
-        </button>
+        <button id="copyBtn" type="button">Copy Output</button>
       </div>
     </section>
   </main>
@@ -79,5 +63,7 @@
     <p>© 2026 BestHumanizerAI. All rights reserved.</p>
   </footer>
 
+  <script src="engine.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
