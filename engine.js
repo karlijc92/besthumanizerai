@@ -1,89 +1,210 @@
-// engine.js — BestHumanizerAI
+const HUMANIZER_LIMIT_KEY = "besthumanizerai_rewrite_count";
 
-async function aggressiveHumanize(text, mode) {
-  if (!text || typeof text !== "string") return "";
+const FREE_REWRITES = 3;
+const FREE_CHARACTER_LIMIT = 1000;
 
-  try {
-    let result = text;
+let lastHumanizedText = "";
 
-    // Step 1 — protect numbers by storing them
-    const numbers = [];
-    result = result.replace(/(\$[\d,]+(?:\.\d+)?(?:\s?(?:billion|million|trillion|thousand))?|\d+(?:\.\d+)?%|\bQ[1-4]\s?\d{4}\b|\b(?:19|20)\d{2}\b|[\d,]+(?:\.\d+)?(?:\s?(?:billion|million|trillion|thousand))?)/gi, function(match) {
-      numbers.push(match);
-      return "NUM" + (numbers.length - 1) + "END";
-    });
+const humanizeBtn = document.getElementById("humanizeBtn");
+const inputText = document.getElementById("inputText");
+const outputText = document.getElementById("outputText");
+const rewriteCount = document.getElementById("rewriteCount");
+const characterCount = document.getElementById("characterCount");
+const upgradeMessage = document.getElementById("upgradeMessage");
+const rewriteMode = document.getElementById("rewriteMode");
 
-    // Step 2 — replace AI words
-    const aiWords = {
-      "utilized": "used", "utilize": "use", "utilizes": "uses",
-      "leveraged": "used", "leverage": "use", "leverages": "uses",
-      "facilitated": "helped", "facilitate": "help", "facilitates": "helps",
-      "robust": "strong", "pivotal": "key", "crucial": "important",
-      "navigated": "managed", "navigate": "manage",
-      "underscored": "showed", "underscore": "show", "underscores": "shows",
-      "delved": "dug", "delve": "dig",
-      "meaningful": "real", "meaningfully": "really",
-      "underlying": "actual", "narrative": "story",
-      "headwinds": "pressure", "landscape": "environment",
-      "demonstrates": "shows", "indicate": "show", "indicates": "shows",
-      "Furthermore": "", "Moreover": "", "Notably": "",
-      "Overall": "", "Ultimately": "", "Clearly": ""
-    };
+function getRewriteCount() {
+  return Number(localStorage.getItem(HUMANIZER_LIMIT_KEY) || 0);
+}
 
-    Object.entries(aiWords).forEach(function([word, replacement]) {
-      const regex = new RegExp("\\b" + word + "\\b", "gi");
-      result = result.replace(regex, replacement);
-    });
+function setRewriteCount(value) {
+  localStorage.setItem(HUMANIZER_LIMIT_KEY, value);
+}
 
-    // Step 3 — replace common words with natural alternatives
-    const swaps = [
-      [/\breported\b/gi, ["posted", "recorded", "logged", "put up"]],
-      [/\brepresented\b/gi, ["made up", "accounted for", "came in at"]],
-      [/\bgenerated\b/gi, ["brought in", "pulled in", "posted"]],
-      [/\bincreased\b/gi, ["rose", "climbed", "jumped", "went up"]],
-      [/\bdecreased\b/gi, ["fell", "dropped", "slid", "came down"]],
-      [/\bdecline\b/gi, ["drop", "fall", "dip", "slide"]],
-      [/\bdespite\b/gi, ["even with", "though", "even though"]],
-      [/\bexpansion\b/gi, ["increase", "jump", "gain", "rise"]],
-      [/\byear-over-year\b/gi, ["from a year earlier", "versus last year", "compared to the prior year"]],
-      [/\bprior year\b/gi, ["year before", "previous year", "last year"]],
-    ];
+function updateRewriteDisplay() {
+  const used = getRewriteCount();
+  rewriteCount.textContent = `${used} / ${FREE_REWRITES} Free Rewrites Used`;
+}
 
-    swaps.forEach(function([pattern, options]) {
-      result = result.replace(pattern, function() {
-        return options[Math.floor(Math.random() * options.length)];
+function updateCharacterDisplay() {
+  const count = inputText.value.length;
+  characterCount.textContent = `${count} / ${FREE_CHARACTER_LIMIT} Characters`;
+}
+
+function extractProtectedData(text) {
+  const patterns = [
+    /\$?\d+(?:,\d{3})*(?:\.\d+)?%?/g,
+    /\b\d{4}\b/g,
+    /\([A-Za-z]+,\s?\d{4}\)/g
+  ];
+
+  const protectedItems = [];
+
+  patterns.forEach((pattern) => {
+    const matches = text.match(pattern);
+
+    if (matches) {
+      matches.forEach((item) => {
+        if (!protectedItems.includes(item)) {
+          protectedItems.push(item);
+        }
       });
-    });
+    }
+  });
 
-    // Step 4 — add contractions
-    result = result.replace(/\bit is\b/gi, "it's");
-    result = result.replace(/\bthat is\b/gi, "that's");
-    result = result.replace(/\bwas not\b/gi, "wasn't");
-    result = result.replace(/\bdid not\b/gi, "didn't");
-    result = result.replace(/\bdoes not\b/gi, "doesn't");
-    result = result.replace(/\bhere is\b/gi, "here's");
-    result = result.replace(/\bthere is\b/gi, "there's");
-    result = result.replace(/\bthey are\b/gi, "they're");
+  return protectedItems;
+}
 
-    // Step 5 — kill AI closing phrases
-    result = result.replace(/[^.!?]*(?:tells a different story|worth paying attention|conditions evolve|space to watch|reflects confidence|harder to ignore|some markets faced|moving forward|going forward|at this juncture)[^.!?]*[.!?]/gi, "");
+function preserveProtectedData(original, rewritten) {
+  const originalProtected = extractProtectedData(original);
+  const rewrittenProtected = extractProtectedData(rewritten);
 
-    // Step 6 — clean up double spaces
-    result = result.replace(/\s{2,}/g, " ").trim();
+  originalProtected.forEach((item, index) => {
+    if (rewrittenProtected[index] !== item) {
+      rewritten = rewritten.replace(rewrittenProtected[index] || "", item);
+    }
+  });
 
-    // Step 7 — restore numbers exactly
-    result = result.replace(/NUM(\d+)END/g, function(match, index) {
-      return numbers[parseInt(index)] || match;
-    });
+  return rewritten;
+}
 
-    // Step 8 — fix any spaces inside numbers
-    result = result.replace(/(\d)\.\s+(\d)/g, "$1.$2");
-    result = result.replace(/(\d),\s+(\d)/g, "$1,$2");
+function randomChoice(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
 
-    return result.trim();
+function shuffleSentences(text) {
+  const sentences = text.match(/[^.!?]+[.!?]+/g);
 
-  } catch(e) {
-    console.error("Engine error:", e);
+  if (!sentences || sentences.length < 2) {
     return text;
   }
+
+  for (let i = sentences.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [sentences[i], sentences[j]] = [sentences[j], sentences[i]];
+  }
+
+  return sentences.join(" ");
 }
+
+function rewriteSentence(sentence, mode) {
+  const replacements = {
+    demonstrates: ["shows", "reveals", "indicates"],
+    significant: ["major", "notable", "important"],
+    increase: ["rise", "growth", "climb"],
+    decrease: ["drop", "decline", "reduction"],
+    approximately: ["around", "roughly", "close to"],
+    therefore: ["because of this", "as a result", "for that reason"],
+    additionally: ["also", "in addition", "plus"],
+    however: ["still", "even so", "at the same time"],
+    utilized: ["used", "applied"],
+    regarding: ["about", "related to"]
+  };
+
+  let rewritten = sentence;
+
+  Object.keys(replacements).forEach((word) => {
+    const regex = new RegExp(`\\b${word}\\b`, "gi");
+
+    rewritten = rewritten.replace(regex, () => {
+      return randomChoice(replacements[word]);
+    });
+  });
+
+  if (mode === "academic") {
+    rewritten = rewritten.replace(/\bshows\b/gi, "illustrates");
+  }
+
+  if (mode === "business") {
+    rewritten = rewritten.replace(/\bimportant\b/gi, "strategic");
+  }
+
+  if (mode === "resume") {
+    rewritten = rewritten.replace(/\bused\b/gi, "executed");
+  }
+
+  return rewritten;
+}
+
+function aggressiveHumanize(text, mode) {
+  if (!text || typeof text !== "string") {
+    return "";
+  }
+
+  let rewritten = text.trim();
+
+  rewritten = rewritten.replace(/\s+/g, " ");
+
+  const sentences = rewritten.match(/[^.!?]+[.!?]+/g);
+
+  if (sentences) {
+    rewritten = sentences
+      .map((sentence) => rewriteSentence(sentence, mode))
+      .join(" ");
+  }
+
+  rewritten = shuffleSentences(rewritten);
+
+  rewritten = preserveProtectedData(text, rewritten);
+
+  return rewritten;
+}
+
+humanizeBtn.addEventListener("click", () => {
+  const currentCount = getRewriteCount();
+
+  const originalInput =
+    outputText.value.trim() !== ""
+      ? outputText.value.trim()
+      : inputText.value.trim();
+
+  if (!originalInput) {
+    alert("Please enter text to humanize.");
+    return;
+  }
+
+  if (
+    currentCount >= FREE_REWRITES &&
+    !document.body.classList.contains("paid-user")
+  ) {
+    upgradeMessage.innerHTML =
+      "You have reached the free rewrite limit. Please upgrade to continue.";
+    return;
+  }
+
+  if (
+    originalInput.length > FREE_CHARACTER_LIMIT &&
+    !document.body.classList.contains("paid-user")
+  ) {
+    upgradeMessage.innerHTML =
+      "Free accounts are limited to 1,000 characters.";
+    return;
+  }
+
+  const selectedMode = rewriteMode
+    ? rewriteMode.value.toLowerCase()
+    : "regular";
+
+  let rewritten = originalInput;
+
+  for (let i = 0; i < 4; i++) {
+    rewritten = aggressiveHumanize(rewritten, selectedMode);
+  }
+
+  lastHumanizedText = rewritten;
+
+  outputText.value = rewritten;
+
+  setRewriteCount(currentCount + 1);
+
+  updateRewriteDisplay();
+
+  upgradeMessage.innerHTML = "";
+});
+
+inputText.addEventListener("input", () => {
+  updateCharacterDisplay();
+});
+
+updateRewriteDisplay();
+updateCharacterDisplay();
