@@ -1,17 +1,17 @@
+// engine.js — BestHumanizerAI
+
 async function aggressiveHumanize(text, mode) {
   if (!text || typeof text !== "string") return "";
 
   try {
     const response = await fetch("/api/humanize", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text, mode })
     });
 
     if (!response.ok) {
-      const err = await response.json();
+      const err = await response.json().catch(() => ({}));
       return "Error: " + (err.error || "Something went wrong. Please try again.");
     }
 
