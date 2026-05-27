@@ -1,5 +1,5 @@
 const HUMANIZER_LIMIT_KEY = "besthumanizerai_rewrite_count";
-const FREE_REWRITES = 300;
+const FREE_REWRITES = 3;
 const FREE_CHARACTER_LIMIT = 1000;
 
 let lastHumanizedText = "";
@@ -21,7 +21,8 @@ function setRewriteCount(value) {
 }
 
 function updateRewriteDisplay() {
-  rewriteCount.textContent = getRewriteCount() + " / " + FREE_REWRITES + " Free Rewrites Used";
+  var used = getRewriteCount();
+  rewriteCount.textContent = used + " / " + FREE_REWRITES + " Free Rewrites Used";
 }
 
 function updateCharacterDisplay() {
@@ -53,7 +54,9 @@ function randomChoice(arr) {
 
 function shuffleSentences(text) {
   var sentences = text.match(/[^.!?]+[.!?]+/g);
-  if (!sentences || sentences.length < 2) return text;
+  if (!sentences || sentences.length < 2) {
+    return text;
+  }
   for (var i = sentences.length - 1; i > 0; i--) {
     var j = Math.floor(Math.random() * (i + 1));
     var temp = sentences[i];
@@ -65,19 +68,20 @@ function shuffleSentences(text) {
 
 function rewriteSentence(sentence, mode) {
   var replacements = {
-    "demonstrates": ["shows", "reveals", "indicates"],
-    "significant": ["major", "notable", "important"],
-    "increase": ["rise", "growth", "climb"],
-    "decrease": ["drop", "decline", "reduction"],
-    "approximately": ["around", "roughly", "close to"],
-    "therefore": ["because of this", "as a result", "for that reason"],
-    "additionally": ["also", "in addition", "plus"],
-    "however": ["still", "even so", "at the same time"],
-    "utilized": ["used", "applied"],
-    "regarding": ["about", "related to"]
+    demonstrates: ["shows", "reveals", "indicates"],
+    significant: ["major", "notable", "important"],
+    increase: ["rise", "growth", "climb"],
+    decrease: ["drop", "decline", "reduction"],
+    approximately: ["around", "roughly", "close to"],
+    therefore: ["because of this", "as a result", "for that reason"],
+    additionally: ["also", "in addition", "plus"],
+    however: ["still", "even so", "at the same time"],
+    utilized: ["used", "applied"],
+    regarding: ["about", "related to"]
   };
 
   var rewritten = sentence;
+
   Object.keys(replacements).forEach(function(word) {
     var regex = new RegExp("\\b" + word + "\\b", "gi");
     rewritten = rewritten.replace(regex, function() {
@@ -85,15 +89,23 @@ function rewriteSentence(sentence, mode) {
     });
   });
 
-  if (mode === "academic") rewritten = rewritten.replace(/\bshows\b/gi, "illustrates");
-  if (mode === "business") rewritten = rewritten.replace(/\bimportant\b/gi, "strategic");
-  if (mode === "resume") rewritten = rewritten.replace(/\bused\b/gi, "executed");
+  if (mode === "academic") {
+    rewritten = rewritten.replace(/\bshows\b/gi, "illustrates");
+  }
+  if (mode === "business") {
+    rewritten = rewritten.replace(/\bimportant\b/gi, "strategic");
+  }
+  if (mode === "resume") {
+    rewritten = rewritten.replace(/\bused\b/gi, "executed");
+  }
 
   return rewritten;
 }
 
 function aggressiveHumanize(text, mode) {
-  if (!text || typeof text !== "string") return "";
+  if (!text || typeof text !== "string") {
+    return "";
+  }
 
   var numData = protectNumbers(text);
   var protectedText = numData.result;
@@ -116,6 +128,7 @@ function aggressiveHumanize(text, mode) {
 
 humanizeBtn.addEventListener("click", function() {
   var currentCount = getRewriteCount();
+
   var originalInput = outputText.value.trim() !== "" ? outputText.value.trim() : inputText.value.trim();
 
   if (!originalInput) {
@@ -152,4 +165,4 @@ inputText.addEventListener("input", function() {
 });
 
 updateRewriteDisplay();
-updateCharacterDisplay();
+updateCharacterDisplay();V
