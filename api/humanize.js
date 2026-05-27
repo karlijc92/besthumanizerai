@@ -16,10 +16,7 @@ export default async function handler(req, res) {
     const pass2 = await callClaude(buildBreakPrompt(pass1));
     if (!pass2) return res.status(500).json({ error: "Pass 2 failed" });
 
-    const pass3 = await callClaude(buildHumanFinalPass(pass2));
-    if (!pass3) return res.status(500).json({ error: "Pass 3 failed" });
-
-    const final = cleanUp(pass3);
+    const final = cleanUp(pass2);
     return res.status(200).json({ result: final });
 
   } catch (e) {
@@ -48,70 +45,57 @@ async function callClaude(prompt) {
 
 function buildPrompt(mode, text) {
   const tones = {
-    "data-safe": "a professional financial writer for a business publication",
-    "academic": "an experienced academic researcher",
-    "business": "a senior business analyst",
-    "executive": "a C-suite executive writing a board summary",
+    "data-safe": "a financial journalist at a major business publication",
+    "academic": "an academic researcher writing for a journal",
+    "business": "a senior business analyst writing an internal memo",
+    "executive": "a CFO writing notes for a board meeting",
     "resume": "a professional resume writer",
-    "plain": "a knowledgeable person explaining to a general audience"
+    "plain": "a smart person explaining this to a friend who follows business news"
   };
 
   const tone = tones[mode] || tones["plain"];
 
-  return `You are ${tone}. Rewrite the following text so it reads as natural human writing — not AI-generated.
+  return `Rewrite the text below as ${tone}. 
 
-RULES YOU MUST FOLLOW:
-- Never change any number, percentage, dollar amount, year, company name, or statistic — ever
-- Do not add new facts or figures
-- Write like a real person who knows this topic well — not like a writing assistant
-- Use varied sentence lengths — some very short, some longer, never uniform
-- Use contractions naturally (it's, didn't, they're, wasn't, that's)
-- Occasionally start a sentence with And, But, or So
-- Use a dash — or parenthetical (like this) — for natural rhythm once or twice
-- Write in paragraphs of unequal length
+This rewrite will be tested against GPTZero. It must score 0% AI. To do that you must write the way a real human does — which means imperfect, uneven, and specific.
 
-THINGS YOU MUST NEVER DO:
-- Never use: Furthermore, Moreover, Notably, In conclusion, In summary, It is worth noting, This demonstrates, This suggests, This indicates, Overall, To summarize, It's worth noting, Clearly, Ultimately
-- Never use fake enthusiasm or planted questions like "Pretty impressive, right?" or "So here's the story:"
-- Never end with a filler observation like "a space worth watching" or "conditions continue to evolve"
-- Never use uniform paragraph lengths
-- Never sound like a press release or a writing assistant summarizing data
-- Never use: leverage, utilize, facilitate, delve, underscore, highlight, navigate, landscape, robust, crucial, pivotal
+HARD RULES — no exceptions:
+- Every number, percentage, dollar amount, year, and company name stays exactly as written
+- No new facts or figures
 
-Return only the rewritten text. Nothing else.
+HUMAN WRITING RULES — all must appear in your output:
+- At least one sentence under 8 words
+- At least one sentence over 30 words that uses a comma, a dash, or a parenthetical
+- At least two contractions (it's, didn't, wasn't, that's, they're, here's)
+- At least one sentence starting with But, And, or So
+- Paragraphs must be uneven — at least one single-sentence paragraph and one paragraph with 3+ sentences
+- One specific observation that shows you actually understand the data — not vague, not motivational, just real
+- No two consecutive sentences can start with the same word
+
+BANNED WORDS AND PHRASES — never use these:
+- Furthermore, Moreover, Notably, Overall, Ultimately, Clearly
+- In conclusion, In summary, To summarize
+- It is worth noting, This demonstrates, This suggests, This indicates
+- leverage, utilize, facilitate, delve, underscore, robust, pivotal, crucial, navigate, highlight
+- "worth watching", "conditions evolve", "tells a story", "reflects confidence", "space to watch"
+- Any sentence that ends by explaining what something "means for the future"
+
+Return only the rewritten text. No intro, no explanation.
 
 TEXT:
 ${text}`;
 }
 
 function buildBreakPrompt(text) {
-  return `You are a human editor reviewing a draft. Make these exact changes:
+  return `You are a human editor. Do NOT rewrite this — make only these surgical changes:
 
-1. Find the 2 longest sentences and break each into two — split at a natural pause
-2. Find 2 short sentences next to each other and combine them into one
-3. Remove any sentence that sounds like a conclusion or summary — cut it entirely
-4. If any sentence starts with "This" followed by a verb (This shows, This reflects, This means) — rewrite it to not start with "This"
-5. Make sure no two consecutive paragraphs are the same length
-6. Do not change any number, percentage, dollar amount, year, or company name
-7. Return only the edited text — no explanation, no commentary
-
-TEXT:
-${text}`;
-}
-
-function buildHumanFinalPass(text) {
-  return `You are a copy editor. Your only job is to remove AI writing patterns from the text below.
-
-Find and fix:
-- Any sentence that sounds like a wrap-up or closing observation — delete it or rewrite it as a plain fact
-- Any word or phrase that feels performative or editorial (e.g. "meaningful", "impressive", "worth watching", "confidence in the business", "tells a story")
-- Any transition that an AI would use to sound smooth — replace with nothing or a simpler word
-- Any place where two sentences in a row start with the same word — vary one of them
-- Any sentence that explains what the data "means" in a vague motivational way — cut it or make it a plain statement
-
-Do not change any number, percentage, dollar amount, year, or company name.
-Do not add anything new.
-Return only the cleaned text.
+1. Find any two consecutive sentences that start with the same word — change the opening word of one of them
+2. Find the single longest sentence — break it into two at the most natural pause
+3. If there are no contractions, add two (it's, didn't, wasn't, that's)
+4. If every paragraph is more than one sentence, pick one paragraph and cut it to a single sentence
+5. Do not touch any number, percentage, dollar amount, year, or company name
+6. Do not add any new information
+7. Return only the text — no commentary
 
 TEXT:
 ${text}`;
