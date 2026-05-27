@@ -1,19 +1,6 @@
-We're at 0% AI — that's the goal! Now we just need to fix the data protection. The `shuffleSentences` function is scrambling everything and breaking the numbers.
-
-Replace your entire `engine.js` with this — same logic, but shuffling removed and number protection fixed:
-
-```javascript
 const HUMANIZER_LIMIT_KEY = "besthumanizerai_rewrite_count";
-const FREE_REWRITES = 3;
+const FREE_REWRITES = 300;
 const FREE_CHARACTER_LIMIT = 1000;
-
-const humanizeBtn = document.getElementById("humanizeBtn");
-const inputText = document.getElementById("inputText");
-const outputText = document.getElementById("outputText");
-const rewriteCount = document.getElementById("rewriteCount");
-const characterCount = document.getElementById("characterCount");
-const upgradeMessage = document.getElementById("upgradeMessage");
-const rewriteMode = document.getElementById("rewriteMode");
 
 function getRewriteCount() {
   return Number(localStorage.getItem(HUMANIZER_LIMIT_KEY) || 0);
@@ -24,13 +11,14 @@ function setRewriteCount(value) {
 }
 
 function updateRewriteDisplay() {
-  const used = getRewriteCount();
-  if (rewriteCount) rewriteCount.textContent = used + " / " + FREE_REWRITES + " Free Rewrites Used";
+  const el = document.getElementById("rewriteCount");
+  if (el) el.textContent = getRewriteCount() + " / " + FREE_REWRITES + " Free Rewrites Used";
 }
 
 function updateCharacterDisplay() {
-  const count = inputText ? inputText.value.length : 0;
-  if (characterCount) characterCount.textContent = count + " / " + FREE_CHARACTER_LIMIT + " Characters";
+  const input = document.getElementById("inputText");
+  const el = document.getElementById("characterCount");
+  if (el && input) el.textContent = input.value.length + " / " + FREE_CHARACTER_LIMIT + " Characters";
 }
 
 function protectNumbers(text) {
@@ -81,108 +69,11 @@ function rewriteSentence(sentence, mode) {
     "moreover": ["and", "also"],
     "notably": ["and", "also"],
     "overall": ["in total", "across the board"],
-    "ultimately": ["in the end", "at the end of the day"],
+    "ultimately": ["in the end"],
     "robust": ["strong", "solid"],
     "pivotal": ["key", "important"],
     "crucial": ["important", "key"],
     "leverage": ["use", "apply"],
     "facilitate": ["help", "support"],
     "underscore": ["show", "highlight"],
-    "meaningful": ["real", "notable"],
-    "underlying": ["actual", "core"],
-    "narrative": ["story", "picture"],
-    "headwinds": ["pressure", "challenges"],
-  };
-
-  let rewritten = sentence;
-
-  Object.keys(replacements).forEach(function(word) {
-    const regex = new RegExp("\\b" + word + "\\b", "gi");
-    rewritten = rewritten.replace(regex, function() {
-      return randomChoice(replacements[word]);
-    });
-  });
-
-  if (mode === "academic") {
-    rewritten = rewritten.replace(/\bshows\b/gi, "illustrates");
-  }
-  if (mode === "business") {
-    rewritten = rewritten.replace(/\bimportant\b/gi, "key");
-  }
-  if (mode === "resume") {
-    rewritten = rewritten.replace(/\bused\b/gi, "executed");
-  }
-
-  return rewritten;
-}
-
-function aggressiveHumanize(text, mode) {
-  if (!text || typeof text !== "string") return "";
-
-  // Protect numbers first
-  const { result: protectedText, items } = protectNumbers(text);
-
-  let rewritten = protectedText.trim();
-  rewritten = rewritten.replace(/\s+/g, " ");
-
-  // Rewrite sentences without shuffling
-  const sentences = rewritten.match(/[^.!?]+[.!?]+/g);
-  if (sentences) {
-    rewritten = sentences.map(function(sentence) {
-      return rewriteSentence(sentence, mode);
-    }).join(" ");
-  }
-
-  // Restore numbers exactly
-  rewritten = restoreNumbers(rewritten, items);
-
-  return rewritten;
-}
-
-if (humanizeBtn) {
-  humanizeBtn.addEventListener("click", function() {
-    const currentCount = getRewriteCount();
-
-    const originalInput = inputText ? inputText.value.trim() : "";
-
-    if (!originalInput) {
-      alert("Please enter text to humanize.");
-      return;
-    }
-
-    if (currentCount >= FREE_REWRITES && !document.body.classList.contains("paid-user")) {
-      if (upgradeMessage) upgradeMessage.innerHTML = "You have reached the free rewrite limit. Please upgrade to continue.";
-      return;
-    }
-
-    if (originalInput.length > FREE_CHARACTER_LIMIT && !document.body.classList.contains("paid-user")) {
-      if (upgradeMessage) upgradeMessage.innerHTML = "Free accounts are limited to 1,000 characters.";
-      return;
-    }
-
-    const selectedMode = rewriteMode ? rewriteMode.value.toLowerCase() : "regular";
-
-    let rewritten = originalInput;
-    for (let i = 0; i < 4; i++) {
-      rewritten = aggressiveHumanize(rewritten, selectedMode);
-    }
-
-    if (outputText) outputText.value = rewritten;
-
-    setRewriteCount(currentCount + 1);
-    updateRewriteDisplay();
-    if (upgradeMessage) upgradeMessage.innerHTML = "";
-  });
-}
-
-if (inputText) {
-  inputText.addEventListener("input", function() {
-    updateCharacterDisplay();
-  });
-}
-
-updateRewriteDisplay();
-updateCharacterDisplay();
-```
-
-Deploy and test. Numbers should stay intact and it should still score 0%.
+    "meaningful":
