@@ -16,7 +16,10 @@ export default async function handler(req, res) {
     const pass2 = await callClaude(buildBreakPrompt(pass1));
     if (!pass2) return res.status(500).json({ error: "Pass 2 failed" });
 
-    const final = cleanUp(pass2);
+    const pass3 = await callClaude(buildHumanFinalPass(pass2));
+    if (!pass3) return res.status(500).json({ error: "Pass 3 failed" });
+
+    const final = cleanUp(pass3);
     return res.status(200).json({ result: final });
 
   } catch (e) {
@@ -55,40 +58,60 @@ function buildPrompt(mode, text) {
 
   const tone = tones[mode] || tones["plain"];
 
-  return `You are ${tone}. Rewrite the following text so it is completely undetectable by AI detection tools including GPTZero, Copyleaks, Turnitin, and Originality.ai.
+  return `You are ${tone}. Rewrite the following text so it reads as natural human writing — not AI-generated.
 
-To achieve this you MUST:
-- Use highly varied sentence structure — alternate between short punchy sentences and longer detailed ones unpredictably
-- Include specific concrete observations that show genuine understanding
-- Use industry-specific vocabulary naturally
-- Occasionally use a dash — like this — or a parenthetical (like this) for natural rhythm
-- Use active voice throughout
-- Write in distinct paragraphs of varying length — some one sentence, some three or four
-- Use contractions naturally throughout (it's, that's, didn't, they're, wasn't, here's)
-- Start occasional sentences with And, But, or So for natural cadence
+RULES YOU MUST FOLLOW:
+- Never change any number, percentage, dollar amount, year, company name, or statistic — ever
+- Do not add new facts or figures
+- Write like a real person who knows this topic well — not like a writing assistant
+- Use varied sentence lengths — some very short, some longer, never uniform
+- Use contractions naturally (it's, didn't, they're, wasn't, that's)
+- Occasionally start a sentence with And, But, or So
+- Use a dash — or parenthetical (like this) — for natural rhythm once or twice
+- Write in paragraphs of unequal length
 
-You MUST NOT:
-- Change any number, percentage, dollar amount, year, company name, or statistic
-- Add any new facts or figures
-- Use: Furthermore, Moreover, Notably, In conclusion, In summary, It is worth noting, This demonstrates, This suggests, This indicates, Overall, To summarize
-- Sound like a corporate press release
-- Use uniform sentence length
-- Return anything except the rewritten text itself
+THINGS YOU MUST NEVER DO:
+- Never use: Furthermore, Moreover, Notably, In conclusion, In summary, It is worth noting, This demonstrates, This suggests, This indicates, Overall, To summarize, It's worth noting, Clearly, Ultimately
+- Never use fake enthusiasm or planted questions like "Pretty impressive, right?" or "So here's the story:"
+- Never end with a filler observation like "a space worth watching" or "conditions continue to evolve"
+- Never use uniform paragraph lengths
+- Never sound like a press release or a writing assistant summarizing data
+- Never use: leverage, utilize, facilitate, delve, underscore, highlight, navigate, landscape, robust, crucial, pivotal
 
-TEXT TO REWRITE:
+Return only the rewritten text. Nothing else.
+
+TEXT:
 ${text}`;
 }
 
 function buildBreakPrompt(text) {
-  return `You are an expert editor. Take the text below and make these specific changes to break any remaining AI detection patterns:
+  return `You are a human editor reviewing a draft. Make these exact changes:
 
-1. Find the 3 longest sentences and split each into two shorter ones
-2. Find 2 short sentences and merge them into one flowing sentence
-3. Add one rhetorical question somewhere natural in the text
-4. Replace any remaining formal transitions with casual ones
-5. Make sure every paragraph is a different length from the ones around it
-6. Keep ALL numbers, percentages, dollar amounts, years, and company names exactly as they are
-7. Return ONLY the edited text — no explanation
+1. Find the 2 longest sentences and break each into two — split at a natural pause
+2. Find 2 short sentences next to each other and combine them into one
+3. Remove any sentence that sounds like a conclusion or summary — cut it entirely
+4. If any sentence starts with "This" followed by a verb (This shows, This reflects, This means) — rewrite it to not start with "This"
+5. Make sure no two consecutive paragraphs are the same length
+6. Do not change any number, percentage, dollar amount, year, or company name
+7. Return only the edited text — no explanation, no commentary
+
+TEXT:
+${text}`;
+}
+
+function buildHumanFinalPass(text) {
+  return `You are a copy editor. Your only job is to remove AI writing patterns from the text below.
+
+Find and fix:
+- Any sentence that sounds like a wrap-up or closing observation — delete it or rewrite it as a plain fact
+- Any word or phrase that feels performative or editorial (e.g. "meaningful", "impressive", "worth watching", "confidence in the business", "tells a story")
+- Any transition that an AI would use to sound smooth — replace with nothing or a simpler word
+- Any place where two sentences in a row start with the same word — vary one of them
+- Any sentence that explains what the data "means" in a vague motivational way — cut it or make it a plain statement
+
+Do not change any number, percentage, dollar amount, year, or company name.
+Do not add anything new.
+Return only the cleaned text.
 
 TEXT:
 ${text}`;
@@ -110,6 +133,12 @@ function cleanUp(text) {
   t = t.replace(/\butilize[sd]?\b/gi, "use");
   t = t.replace(/\bleverage[sd]?\b/gi, "use");
   t = t.replace(/\bfacilitate[sd]?\b/gi, "help");
+  t = t.replace(/\brobust\b/gi, "strong");
+  t = t.replace(/\bpivotal\b/gi, "key");
+  t = t.replace(/\bcrucial\b/gi, "important");
+  t = t.replace(/\bnavigate[sd]?\b/gi, "manage");
+  t = t.replace(/\bunderscore[sd]?\b/gi, "show");
+  t = t.replace(/\bdelve[sd]?\b/gi, "dig");
   t = t.replace(/\s{2,}/g, " ");
   t = t.replace(/\n{3,}/g, "\n\n");
   return t.trim();
