@@ -76,4 +76,110 @@ function rewriteSentence(sentence, mode) {
     "leverage": ["use", "apply"],
     "facilitate": ["help", "support"],
     "underscore": ["show", "highlight"],
-    "meaningful":
+    "meaningful": ["real", "notable"],
+    "underlying": ["actual", "core"],
+    "narrative": ["story", "picture"],
+    "headwinds": ["pressure", "challenges"],
+    "represents": ["makes up", "accounts for", "comes in at"],
+    "contributing": ["bringing in", "adding", "posting"],
+    "accounted for": ["made up", "came in at", "was"],
+    "came in at": ["hit", "reached", "landed at"],
+    "marking": ["a", "which was"],
+    "noting": ["seeing", "showing"],
+    "while": ["as", "with"],
+    "reaching": ["hitting", "climbing to", "landing at"]
+  };
+
+  let rewritten = sentence;
+  Object.keys(replacements).forEach(function(word) {
+    const regex = new RegExp("\\b" + word + "\\b", "gi");
+    rewritten = rewritten.replace(regex, function() {
+      return randomChoice(replacements[word]);
+    });
+  });
+
+  if (mode === "academic") rewritten = rewritten.replace(/\bshows\b/gi, "illustrates");
+  if (mode === "business") rewritten = rewritten.replace(/\bimportant\b/gi, "key");
+  if (mode === "resume") rewritten = rewritten.replace(/\bused\b/gi, "executed");
+
+  return rewritten;
+}
+
+function aggressiveHumanize(text, mode) {
+  if (!text || typeof text !== "string") return "";
+  const { result: protectedText, items } = protectNumbers(text);
+  let rewritten = protectedText.trim().replace(/\s+/g, " ");
+  const sentences = rewritten.match(/[^.!?]+[.!?]+/g);
+  if (sentences) {
+    rewritten = sentences.map(function(s) {
+      return rewriteSentence(s, mode);
+    }).join(" ");
+  }
+  return restoreNumbers(rewritten, items);
+}
+
+function copyOutput() {
+  const output = document.getElementById("outputText");
+  if (!output || !output.value.trim()) return;
+  navigator.clipboard.writeText(output.value);
+  const btn = document.getElementById("copyBtn");
+  if (btn) {
+    btn.innerText = "Copied!";
+    setTimeout(function() { btn.innerText = "Copy Output"; }, 1500);
+  }
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+  const humanizeBtn = document.getElementById("humanizeBtn");
+  const inputText = document.getElementById("inputText");
+  const outputText = document.getElementById("outputText");
+  const upgradeMessage = document.getElementById("upgradeMessage");
+  const rewriteMode = document.getElementById("rewriteMode");
+  const copyBtn = document.getElementById("copyBtn");
+
+  if (inputText) {
+    inputText.addEventListener("input", updateCharacterDisplay);
+  }
+
+  if (copyBtn) {
+    copyBtn.addEventListener("click", copyOutput);
+  }
+
+  if (humanizeBtn) {
+    humanizeBtn.addEventListener("click", function() {
+      const currentCount = getRewriteCount();
+      const originalInput = inputText ? inputText.value.trim() : "";
+
+      if (!originalInput) {
+        alert("Please enter text to humanize.");
+        return;
+      }
+
+      if (currentCount >= FREE_REWRITES && !document.body.classList.contains("paid-user")) {
+        if (upgradeMessage) upgradeMessage.innerHTML = "You have reached the free rewrite limit. Please upgrade to continue.";
+        return;
+      }
+
+      if (originalInput.length > FREE_CHARACTER_LIMIT && !document.body.classList.contains("paid-user")) {
+        if (upgradeMessage) upgradeMessage.innerHTML = "Free accounts are limited to 1,000 characters.";
+        return;
+      }
+
+      const selectedMode = rewriteMode ? rewriteMode.value.toLowerCase() : "regular";
+
+      let rewritten = originalInput;
+      for (let i = 0; i < 4; i++) {
+        rewritten = aggressiveHumanize(rewritten, selectedMode);
+      }
+
+      if (outputText) outputText.value = rewritten;
+
+      setRewriteCount(currentCount + 1);
+      updateRewriteDisplay();
+      if (upgradeMessage) upgradeMessage.innerHTML = "";
+    });
+  }
+
+  updateRewriteDisplay();
+  updateCharacterDisplay();
+});
