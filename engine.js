@@ -25,13 +25,13 @@ function updateRewriteDisplay() {
 }
 
 function updateCharacterDisplay() {
-  const count = inputText.value.length;
+  var count = inputText.value.length;
   characterCount.textContent = count + " / " + FREE_CHARACTER_LIMIT + " Characters";
 }
 
 function protectNumbers(text) {
-  const items = [];
-  const result = text.replace(/(\$[\d,]+(?:\.\d+)?(?:\s?(?:billion|million|trillion|thousand))?|\d+(?:,\d{3})*(?:\.\d+)?(?:\s?(?:billion|million|trillion|thousand))?%?|\bQ[1-4]\s?\d{4}\b|\b(?:19|20)\d{2}\b)/gi, function(match) {
+  var items = [];
+  var result = text.replace(/(\$[\d,]+(?:\.\d+)?(?:\s?(?:billion|million|trillion|thousand))?|\d+(?:,\d{3})*(?:\.\d+)?(?:\s?(?:billion|million|trillion|thousand))?%?|\bQ[1-4]\s?\d{4}\b|\b(?:19|20)\d{2}\b)/gi, function(match) {
     items.push(match);
     return "PROTECT" + (items.length - 1) + "END";
   });
@@ -95,9 +95,9 @@ function rewriteSentence(sentence, mode) {
 function aggressiveHumanize(text, mode) {
   if (!text || typeof text !== "string") return "";
 
-  var protected = protectNumbers(text);
-  var protectedText = protected.result;
-  var items = protected.items;
+  var numData = protectNumbers(text);
+  var protectedText = numData.result;
+  var items = numData.items;
 
   var rewritten = protectedText.trim().replace(/\s+/g, " ");
 
