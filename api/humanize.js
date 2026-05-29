@@ -19,71 +19,67 @@ export default async function handler(req, res) {
   );
 
   const modeInstructions = {
-    "data-safe": "Rewrite this in a natural, conversational but professional tone.",
-    "academic": "Rewrite this in a formal academic tone suitable for a research paper or thesis.",
-    "business": "Rewrite this in a professional business report tone.",
-    "executive": "Rewrite this as a concise executive summary with confident, direct language.",
-    "resume": "Rewrite this in a strong, action-oriented resume/cover letter tone.",
-    "plain": "Rewrite this in simple plain English that anyone can understand.",
+    "data-safe": "natural, conversational but professional",
+    "academic": "formal academic",
+    "business": "professional business report",
+    "executive": "concise executive summary",
+    "resume": "strong action-oriented resume",
+    "plain": "simple plain English",
   };
 
-  const toneInstruction = modeInstructions[mode] || modeInstructions["data-safe"];
+  const tone = modeInstructions[mode] || modeInstructions["data-safe"];
 
-  const personas = [
-    "a tired grad student writing up findings at midnight",
-    "a sharp financial analyst who writes like they talk",
-    "a business journalist on deadline who keeps it punchy",
-    "a senior consultant who's seen it all and writes plainly",
-    "a detail-oriented accountant who explains numbers clearly"
+  // Split into sentences
+  const sentences = protectedText.match(/[^.!?]+[.!?]+/g) || [protectedText];
+
+  const sentenceInstructions = [
+    "Rewrite this sentence as if you just thought of it naturally. Keep it casual.",
+    "Rewrite this in a direct, no-nonsense way. Cut any fluff.",
+    "Rewrite this the way a human analyst would say it out loud.",
+    "Rewrite this with a slightly informal tone, like explaining to a colleague.",
+    "Rewrite this plainly and simply. Short is fine.",
+    "Rewrite this with a bit of personality. Real voice.",
+    "Rewrite this as a punchy one-liner if possible.",
+    "Rewrite this conversationally, like you're presenting to a small group.",
   ];
-  const persona = personas[Math.floor(Math.random() * personas.length)];
 
-  const prompt = `You are ${persona}. Rewrite the text below in your own natural voice.
+  // Rewrite each sentence individually
+  const rewrittenSentences = await Promise.all(
+    sentences.map(async (sentence, i) => {
+      const instruction = sentenceInstructions[i % sentenceInstructions.length];
+      const prompt = `${instruction} Tone: ${tone}.
+Keep any tokens like NUM0X, NUM1X exactly as-is.
+Output ONLY the rewritten sentence, nothing else.
 
-${toneInstruction}
+Sentence: ${sentence.trim()}`;
 
-RULES:
-1. Tokens like NUM0X, NUM1X, NUM2X are protected values. Keep every single one exactly as-is. Do not change, move, or remove them.
-2. Write exactly how that person would write — their vocabulary, their rhythm, their personality.
-3. Vary sentence length. Some short. Some longer and more detailed.
-4. Use contractions naturally. Use dashes, parentheses, real punctuation.
-5. Never use: "notably", "furthermore", "moreover", "in conclusion", "it is important to note", "delve", "utilize", "showcasing", "highlighting", "underscoring", "it is worth noting".
-6. Do not add new facts or numbers.
-7. Output ONLY the rewritten text. No preamble, no explanation.
+      try {
+        const response = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": process.env.ANTHROPIC_API_KEY,
+            "anthropic-version": "2023-06-01",
+          },
+          body: JSON.stringify({
+            model: "claude-haiku-4-5-20251001",
+            max_tokens: 200,
+            messages: [{ role: "user", content: prompt }],
+          }),
+        });
 
-Text to rewrite:
-${protectedText}`;
+        const data = await response.json();
+        if (!response.ok) return sentence;
+        return data.content[0].text.trim();
+      } catch {
+        return sentence;
+      }
+    })
+  );
 
-  let claudeOutput;
-  try {
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": process.env.ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-haiku-4-5-20251001",
-        max_tokens: 1024,
-        messages: [{ role: "user", content: prompt }],
-      }),
-    });
+  let restored = rewrittenSentences.join(" ");
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      console.error("Claude API error:", data);
-      return res.status(500).json({ error: "Claude API error", detail: data });
-    }
-
-    claudeOutput = data.content[0].text;
-  } catch (err) {
-    console.error("Fetch error:", err);
-    return res.status(500).json({ error: "Failed to reach Claude API" });
-  }
-
-  let restored = claudeOutput.replace(/NUM(\d+)X/g, (match, index) => {
+  restored = restored.replace(/NUM(\d+)X/g, (match, index) => {
     return protectedItems[parseInt(index, 10)] !== undefined
       ? protectedItems[parseInt(index, 10)]
       : match;
