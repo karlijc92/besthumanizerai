@@ -48,7 +48,7 @@ STRICT RULES:
 3. Rewrite the words around the DATASLOTs — not the DATASLOTs themselves.
 4. Use contractions. Use dashes. Mix short and long sentences.
 5. Start 1 or 2 sentences with "And" or "But".
-6. NEVER use: "notably", "furthermore", "moreover", "in conclusion", "it is important to note", "delve", "utilize", "showcasing", "highlighting", "underscoring", "no doubt", "on the surface", "on paper", "the trajectory", "worth noting", "real momentum", "solid growth", "hitting its stride", "firing on all cylinders", "bottom line", "across the board", "at the end of the day".
+6. NEVER use these words or phrases: "notably", "furthermore", "moreover", "in conclusion", "it is important to note", "delve", "utilize", "showcasing", "highlighting", "underscoring", "no doubt", "on the surface", "on paper", "the trajectory", "worth noting", "real momentum", "solid growth", "hitting its stride", "firing on all cylinders", "bottom line", "across the board", "at the end of the day", "here's where it gets interesting", "but here's the thing", "that's where it gets", "interesting to note", "it's worth", "paint a picture", "tells a story", "speaks volumes", "makes it clear".
 7. Output ONLY the rewritten text. No intro, no explanation, no questions.
 
 Text:
