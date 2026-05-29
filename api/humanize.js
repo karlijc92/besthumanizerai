@@ -9,7 +9,6 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "No text provided" });
   }
 
-  // Step 1: Lock numbers
   const protectedItems = [];
   const protectedText = text.replace(
     /(\$[\d,]+(?:\.\d+)?(?:\s?(?:billion|million|trillion|thousand))?|\d+(?:,\d{3})*(?:\.\d+)?(?:\s?(?:billion|million|trillion|thousand))?%?|\bQ[1-4]\s?\d{4}\b|\b(?:19|20)\d{2}\b|\([A-Za-z]+,\s?(?:19|20)\d{2}\))/gi,
@@ -63,14 +62,14 @@ ${protectedText}`;
     return res.status(500).json({ error: "Failed to reach Claude API" });
   }
 
-  // Step 2: Restore numbers
+  // Restore numbers first before anything else
   let restored = claudeOutput.replace(/NUM(\d+)X/g, (match, index) => {
     return protectedItems[parseInt(index, 10)] !== undefined
       ? protectedItems[parseInt(index, 10)]
       : match;
   });
 
-  // Step 3: Local pattern-breaking pass
+  // Synonym swap pass — breaks Claude's pattern without touching numbers
   const synonyms = {
     "remains the core driver": ["still leads the way", "keeps driving results", "is still out front"],
     "remains": ["is still", "continues as", "stays"],
@@ -82,9 +81,11 @@ ${protectedText}`;
     "generating": ["bringing in", "pulling in", "producing"],
     "accounting for": ["making up", "representing", "covering"],
     "segment": ["side", "division", "part of the business"],
-    "momentum continues building": ["things are moving", "the trend is holding", "growth is continuing"],
     "rewarded": ["taken care of", "paid back", "returned value"],
     "core": ["main", "primary", "biggest"],
+    "paints a picture of": ["shows", "points to", "suggests"],
+    "steady momentum": ["consistent growth", "a solid run", "continued progress"],
+    "come alive": ["stand out", "pick up", "get interesting"],
   };
 
   Object.keys(synonyms).forEach((phrase) => {
@@ -94,20 +95,7 @@ ${protectedText}`;
     restored = restored.replace(regex, replacement);
   });
 
-  // Step 4: Shuffle middle sentences to break flow pattern
-  const sentences = restored.match(/[^.!?]+[.!?]+/g);
-  if (sentences && sentences.length > 4) {
-    const first = sentences[0];
-    const last = sentences[sentences.length - 1];
-    const middle = sentences.slice(1, -1);
-    for (let i = middle.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [middle[i], middle[j]] = [middle[j], middle[i]];
-    }
-    restored = [first, ...middle, last].join(" ");
-  }
-
-  // Step 5: Light cleanup
+  // Light cleanup only
   restored = restored
     .replace(/\s+/g, " ")
     .replace(/\s+([.,;:!?])/g, "$1")
