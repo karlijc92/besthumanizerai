@@ -9,6 +9,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "No text provided" });
   }
 
+  // Step 1: Lock numbers
   const protectedItems = [];
   const protectedText = text.replace(
     /(\$[\d,]+(?:\.\d+)?(?:\s?(?:billion|million|trillion|thousand))?|\d+(?:,\d{3})*(?:\.\d+)?(?:\s?(?:billion|million|trillion|thousand))?%?|\bQ[1-4]\s?\d{4}\b|\b(?:19|20)\d{2}\b|\([A-Za-z]+,\s?(?:19|20)\d{2}\))/gi,
@@ -30,14 +31,11 @@ export default async function handler(req, res) {
   const tone = modeInstructions[mode] || modeInstructions["data-safe"];
 
   const prompt = `You are a human writer. Rewrite the text below in a ${tone} tone.
-
 RULES:
 1. Tokens like NUM0X, NUM1X, NUM2X are protected. Keep every one exactly as-is.
-2. Use contractions. Use dashes. Use parentheses.
-3. Vary sentence length — some very short, some longer.
-4. NEVER use these phrases under any circumstances: "no doubt about it", "here's where it gets interesting", "but here's the thing", "at least on the surface", "at least on paper", "the trajectory", "pointing upward", "heading in the right direction", "worth noting", "it's worth", "real momentum", "real growth", "solid growth", "notably", "furthermore", "moreover", "in conclusion", "it is important to note", "delve", "utilize", "showcasing", "highlighting", "underscoring".
-5. Do not use filler transition phrases. Just say the thing directly.
-6. Output ONLY the rewritten text. Nothing else.
+2. Use contractions. Use dashes. Vary sentence length.
+3. NEVER use: "notably", "furthermore", "moreover", "in conclusion", "it is important to note", "delve", "utilize", "showcasing", "highlighting", "underscoring", "no doubt about it", "here's where it gets interesting", "at least on the surface", "at least on paper", "the trajectory", "worth noting", "real momentum", "solid growth".
+4. Output ONLY the rewritten text. Nothing else.
 
 Text:
 ${protectedText}`;
@@ -65,14 +63,51 @@ ${protectedText}`;
     return res.status(500).json({ error: "Failed to reach Claude API" });
   }
 
-  // Restore protected values
+  // Step 2: Restore numbers
   let restored = claudeOutput.replace(/NUM(\d+)X/g, (match, index) => {
     return protectedItems[parseInt(index, 10)] !== undefined
       ? protectedItems[parseInt(index, 10)]
       : match;
   });
 
-  // Light cleanup only — no aggressive replacements that corrupt sentences
+  // Step 3: Local pattern-breaking pass
+  const synonyms = {
+    "remains the core driver": ["still leads the way", "keeps driving results", "is still out front"],
+    "remains": ["is still", "continues as", "stays"],
+    "surpassing": ["beating", "topping", "clearing"],
+    "allocated": ["put", "spent", "directed"],
+    "materializes": ["plays out", "comes through", "holds"],
+    "projecting": ["expecting", "forecasting", "calling for"],
+    "translating to": ["giving them", "working out to", "meaning"],
+    "generating": ["bringing in", "pulling in", "producing"],
+    "accounting for": ["making up", "representing", "covering"],
+    "segment": ["side", "division", "part of the business"],
+    "momentum continues building": ["things are moving", "the trend is holding", "growth is continuing"],
+    "rewarded": ["taken care of", "paid back", "returned value"],
+    "core": ["main", "primary", "biggest"],
+  };
+
+  Object.keys(synonyms).forEach((phrase) => {
+    const options = synonyms[phrase];
+    const replacement = options[Math.floor(Math.random() * options.length)];
+    const regex = new RegExp(phrase, "gi");
+    restored = restored.replace(regex, replacement);
+  });
+
+  // Step 4: Shuffle middle sentences to break flow pattern
+  const sentences = restored.match(/[^.!?]+[.!?]+/g);
+  if (sentences && sentences.length > 4) {
+    const first = sentences[0];
+    const last = sentences[sentences.length - 1];
+    const middle = sentences.slice(1, -1);
+    for (let i = middle.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [middle[i], middle[j]] = [middle[j], middle[i]];
+    }
+    restored = [first, ...middle, last].join(" ");
+  }
+
+  // Step 5: Light cleanup
   restored = restored
     .replace(/\s+/g, " ")
     .replace(/\s+([.,;:!?])/g, "$1")
