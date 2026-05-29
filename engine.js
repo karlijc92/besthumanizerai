@@ -1,5 +1,9 @@
+// ============================================================
+// BestHumanizerAI — engine.js (self-contained, no API needed)
+// ============================================================
+
 const HUMANIZER_LIMIT_KEY = "besthumanizerai_rewrite_count";
-const FREE_REWRITES = 3;
+const FREE_REWRITES = 300;
 const FREE_CHARACTER_LIMIT = 1000;
 
 let lastHumanizedText = "";
@@ -11,125 +15,164 @@ const rewriteCount = document.getElementById("rewriteCount");
 const characterCount = document.getElementById("characterCount");
 const upgradeMessage = document.getElementById("upgradeMessage");
 const rewriteMode = document.getElementById("rewriteMode");
+const copyBtn = document.getElementById("copyBtn");
 
+// ── Usage tracking ───────────────────────────────────────────
 function getRewriteCount() {
   return Number(localStorage.getItem(HUMANIZER_LIMIT_KEY) || 0);
 }
-
 function setRewriteCount(value) {
   localStorage.setItem(HUMANIZER_LIMIT_KEY, value);
 }
-
 function updateRewriteDisplay() {
-  var used = getRewriteCount();
-  rewriteCount.textContent = used + " / " + FREE_REWRITES + " Free Rewrites Used";
+  const used = getRewriteCount();
+  rewriteCount.textContent = `${used} / ${FREE_REWRITES} Free Rewrites Used`;
 }
-
 function updateCharacterDisplay() {
-  var count = inputText.value.length;
-  characterCount.textContent = count + " / " + FREE_CHARACTER_LIMIT + " Characters";
+  const count = inputText.value.length;
+  characterCount.textContent = `${count} / ${FREE_CHARACTER_LIMIT} Characters`;
 }
 
+// ── Data protection ──────────────────────────────────────────
+// Step 1: replace every number/date/citation with a placeholder token
 function protectNumbers(text) {
-  var items = [];
-  var result = text.replace(/(\$[\d,]+(?:\.\d+)?(?:\s?(?:billion|million|trillion|thousand))?|\d+(?:,\d{3})*(?:\.\d+)?(?:\s?(?:billion|million|trillion|thousand))?%?|\bQ[1-4]\s?\d{4}\b|\b(?:19|20)\d{2}\b)/gi, function(match) {
-    items.push(match);
-    return "PROTECT" + (items.length - 1) + "END";
-  });
-  return { result: result, items: items };
+  const items = [];
+  const protected_text = text.replace(
+    /(\$[\d,]+(?:\.\d+)?(?:\s?(?:billion|million|trillion|thousand))?|\d+(?:,\d{3})*(?:\.\d+)?(?:\s?(?:billion|million|trillion|thousand))?%?|\bQ[1-4]\s?\d{4}\b|\b(?:19|20)\d{2}\b|\([A-Za-z]+,\s?(?:19|20)\d{2}\))/gi,
+    (match) => {
+      items.push(match);
+      return `__PROTECT${items.length - 1}__`;
+    }
+  );
+  return { protected_text, items };
 }
 
+// Step 2: restore tokens back to original values
 function restoreNumbers(text, items) {
-  var result = text.replace(/PROTECT(\d+)END/g, function(match, index) {
-    return items[parseInt(index)] || match;
+  return text.replace(/__PROTECT(\d+)__/g, (match, index) => {
+    return items[parseInt(index, 10)] !== undefined ? items[parseInt(index, 10)] : match;
   });
-  result = result.replace(/(\d)\.\s+(\d)/g, "$1.$2");
-  result = result.replace(/(\d),\s+(\d)/g, "$1,$2");
-  return result;
 }
 
+// ── Cleanup ──────────────────────────────────────────────────
+function cleanupText(text) {
+  if (!text || typeof text !== "string") return "";
+  let cleaned = text;
+  cleaned = cleaned.replace(/\s+/g, " ");
+  cleaned = cleaned.replace(/\s+([.,;:!?])/g, "$1");
+  cleaned = cleaned.replace(/([.,;:!?])([A-Za-z])/g, "$1 $2");
+  cleaned = cleaned.replace(/\.\s*\./g, ".");
+  cleaned = cleaned.replace(/,\s*,/g, ",");
+  cleaned = cleaned.replace(/\s+\)/g, ")");
+  cleaned = cleaned.replace(/\(\s+/g, "(");
+  cleaned = cleaned.replace(/(%)([A-Za-z])/g, "$1 $2");
+  // Capitalise first letter of each sentence
+  cleaned = cleaned
+    .split(/(?<=[.!?])\s+/)
+    .map((s) => {
+      const t = s.trim();
+      if (!t) return "";
+      return t.charAt(0).toUpperCase() + t.slice(1);
+    })
+    .filter(Boolean)
+    .join(" ");
+  return cleaned.trim();
+}
+
+// ── Rewrite helpers ──────────────────────────────────────────
 function randomChoice(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
 function shuffleSentences(text) {
-  var sentences = text.match(/[^.!?]+[.!?]+/g);
-  if (!sentences || sentences.length < 2) {
-    return text;
-  }
-  for (var i = sentences.length - 1; i > 0; i--) {
-    var j = Math.floor(Math.random() * (i + 1));
-    var temp = sentences[i];
-    sentences[i] = sentences[j];
-    sentences[j] = temp;
+  const sentences = text.match(/[^.!?]+[.!?]+/g);
+  if (!sentences || sentences.length < 2) return text;
+  for (let i = sentences.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [sentences[i], sentences[j]] = [sentences[j], sentences[i]];
   }
   return sentences.join(" ");
 }
 
 function rewriteSentence(sentence, mode) {
-  var replacements = {
+  const replacements = {
     demonstrates: ["shows", "reveals", "indicates"],
-    significant: ["major", "notable", "important"],
-    increase: ["rise", "growth", "climb"],
-    decrease: ["drop", "decline", "reduction"],
-    approximately: ["around", "roughly", "close to"],
-    therefore: ["because of this", "as a result", "for that reason"],
+    significant:  ["major", "notable", "important"],
+    increase:     ["rise", "growth", "climb"],
+    decrease:     ["drop", "decline", "reduction"],
+    approximately:["around", "roughly", "close to"],
+    therefore:    ["because of this", "as a result", "for that reason"],
     additionally: ["also", "in addition", "plus"],
-    however: ["still", "even so", "at the same time"],
-    utilized: ["used", "applied"],
-    regarding: ["about", "related to"]
+    however:      ["still", "even so", "at the same time"],
+    utilized:     ["used", "applied"],
+    regarding:    ["about", "related to"],
+    achieved:     ["reached", "hit", "delivered"],
+    reported:     ["posted", "recorded", "noted"],
+    generated:    ["produced", "brought in", "earned"],
+    represents:   ["makes up", "accounts for", "equals"],
+    compared:     ["measured against", "relative to", "vs"],
   };
 
-  var rewritten = sentence;
-
-  Object.keys(replacements).forEach(function(word) {
-    var regex = new RegExp("\\b" + word + "\\b", "gi");
-    rewritten = rewritten.replace(regex, function() {
-      return randomChoice(replacements[word]);
-    });
+  let rewritten = sentence;
+  Object.keys(replacements).forEach((word) => {
+    const regex = new RegExp(`\\b${word}\\b`, "gi");
+    rewritten = rewritten.replace(regex, () => randomChoice(replacements[word]));
   });
 
+  // Mode-specific tweaks
   if (mode === "academic") {
     rewritten = rewritten.replace(/\bshows\b/gi, "illustrates");
+    rewritten = rewritten.replace(/\bused\b/gi, "employed");
   }
-  if (mode === "business") {
+  if (mode === "business" || mode === "executive") {
     rewritten = rewritten.replace(/\bimportant\b/gi, "strategic");
+    rewritten = rewritten.replace(/\bused\b/gi, "leveraged");
   }
   if (mode === "resume") {
     rewritten = rewritten.replace(/\bused\b/gi, "executed");
+    rewritten = rewritten.replace(/\bled\b/gi, "drove");
+  }
+  if (mode === "plain") {
+    rewritten = rewritten.replace(/\bemployed\b/gi, "used");
+    rewritten = rewritten.replace(/\billustrates\b/gi, "shows");
   }
 
   return rewritten;
 }
 
+// ── Main humanize function ───────────────────────────────────
 function aggressiveHumanize(text, mode) {
-  if (!text || typeof text !== "string") {
-    return "";
-  }
+  if (!text || typeof text !== "string") return "";
 
-  var numData = protectNumbers(text);
-  var protectedText = numData.result;
-  var items = numData.items;
+  // 1. Lock all numbers/dates/citations
+  const { protected_text, items } = protectNumbers(text);
 
-  var rewritten = protectedText.trim().replace(/\s+/g, " ");
-
-  var sentences = rewritten.match(/[^.!?]+[.!?]+/g);
+  // 2. Rewrite sentences
+  let rewritten = protected_text.trim().replace(/\s+/g, " ");
+  const sentences = rewritten.match(/[^.!?]+[.!?]+/g);
   if (sentences) {
-    rewritten = sentences.map(function(sentence) {
-      return rewriteSentence(sentence, mode);
-    }).join(" ");
+    rewritten = sentences.map((s) => rewriteSentence(s, mode)).join(" ");
   }
 
+  // 3. Shuffle sentence order for variety
   rewritten = shuffleSentences(rewritten);
+
+  // 4. Restore all protected values
   rewritten = restoreNumbers(rewritten, items);
 
+  // 5. Clean up spacing and punctuation
+  rewritten = cleanupText(rewritten);
+
   return rewritten;
 }
 
-humanizeBtn.addEventListener("click", function() {
-  var currentCount = getRewriteCount();
+// ── Button handler ───────────────────────────────────────────
+humanizeBtn.addEventListener("click", function () {
+  const currentCount = getRewriteCount();
 
-  var originalInput = outputText.value.trim() !== "" ? outputText.value.trim() : inputText.value.trim();
+  // Re-humanize output if it exists, otherwise use input
+  const originalInput =
+    outputText.value.trim() !== "" ? outputText.value.trim() : inputText.value.trim();
 
   if (!originalInput) {
     alert("Please enter text to humanize.");
@@ -137,19 +180,22 @@ humanizeBtn.addEventListener("click", function() {
   }
 
   if (currentCount >= FREE_REWRITES && !document.body.classList.contains("paid-user")) {
-    upgradeMessage.innerHTML = "You have reached the free rewrite limit. Please upgrade to continue.";
+    upgradeMessage.innerHTML =
+      'You have reached the free rewrite limit. <a href="pricing.html">Upgrade to continue.</a>';
     return;
   }
 
   if (originalInput.length > FREE_CHARACTER_LIMIT && !document.body.classList.contains("paid-user")) {
-    upgradeMessage.innerHTML = "Free accounts are limited to 1,000 characters.";
+    upgradeMessage.innerHTML =
+      'Free accounts are limited to 1,000 characters. <a href="pricing.html">Upgrade for longer text.</a>';
     return;
   }
 
-  var selectedMode = rewriteMode ? rewriteMode.value.toLowerCase() : "regular";
+  const selectedMode = rewriteMode ? rewriteMode.value.toLowerCase() : "data-safe";
 
-  var rewritten = originalInput;
-  for (var i = 0; i < 4; i++) {
+  // Run 4 passes for maximum humanization
+  let rewritten = originalInput;
+  for (let i = 0; i < 4; i++) {
     rewritten = aggressiveHumanize(rewritten, selectedMode);
   }
 
@@ -160,9 +206,25 @@ humanizeBtn.addEventListener("click", function() {
   upgradeMessage.innerHTML = "";
 });
 
-inputText.addEventListener("input", function() {
+// ── Copy button ──────────────────────────────────────────────
+if (copyBtn) {
+  copyBtn.addEventListener("click", function () {
+    if (!outputText.value.trim()) {
+      alert("Nothing to copy yet.");
+      return;
+    }
+    navigator.clipboard.writeText(outputText.value).then(() => {
+      copyBtn.textContent = "Copied!";
+      setTimeout(() => (copyBtn.textContent = "Copy Output"), 2000);
+    });
+  });
+}
+
+// ── Character counter ────────────────────────────────────────
+inputText.addEventListener("input", function () {
   updateCharacterDisplay();
 });
 
+// ── Init ─────────────────────────────────────────────────────
 updateRewriteDisplay();
-updateCharacterDisplay();V
+updateCharacterDisplay();
