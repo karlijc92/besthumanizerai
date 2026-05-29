@@ -9,14 +9,13 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: "No text provided" });
   }
 
+  // Step 1: Extract numbers and replace with BLANK
   const protectedItems = [];
   const protectedText = text.replace(
     /(\$\d[\d,]*(?:\.\d+)?(?:\s?(?:billion|million|trillion|thousand))?|\d[\d,]*(?:\.\d+)?(?:\s?(?:billion|million|trillion|thousand))?\s?%|\d[\d,]*(?:\.\d+)?(?:\s?(?:billion|million|trillion|thousand))?|\bQ[1-4]\s?\d{4}\b|\b(?:19|20)\d{2}\b|\([A-Za-z]+,\s?(?:19|20)\d{2}\))/gi,
     (match) => {
       protectedItems.push(match.trim());
-      const index = protectedItems.length - 1;
-      const words = ["AANUM", "BBNUM", "CCNUM", "DDNUM", "EENUM", "FFNUM", "GGNUM", "HHNUM", "IINUM", "JJNUM"];
-      return words[index % words.length] + String(index) + "ZZ";
+      return "DATASLOT";
     }
   );
 
@@ -33,7 +32,7 @@ module.exports = async function handler(req, res) {
 
   const prompt = `You are a human writer. Rewrite the text below in a ${tone} tone.
 RULES:
-1. Any token that looks like AANUM0ZZ, BBNUM1ZZ, CCNUM2ZZ etc. is a placeholder. Keep every single one EXACTLY as written — same letters, same number, same ZZ ending. Do not change them in any way.
+1. The word DATASLOT is a placeholder for a number, percentage, date, or citation. Keep every DATASLOT exactly as the word DATASLOT — do not replace it, remove it, or change it in any way.
 2. Use contractions. Use dashes. Vary sentence length.
 3. NEVER use: "notably", "furthermore", "moreover", "in conclusion", "it is important to note", "delve", "utilize", "showcasing", "highlighting", "underscoring", "no doubt about it", "here's where it gets interesting", "at least on the surface", "at least on paper", "the trajectory", "worth noting", "real momentum", "solid growth".
 4. Output ONLY the rewritten text. Nothing else.
@@ -64,17 +63,15 @@ ${protectedText}`;
     return res.status(500).json({ error: "Failed to reach Claude API" });
   }
 
-  const words = ["AANUM", "BBNUM", "CCNUM", "DDNUM", "EENUM", "FFNUM", "GGNUM", "HHNUM", "IINUM", "JJNUM"];
-  let restored = claudeOutput;
-  words.forEach((word) => {
-    const regex = new RegExp(word + "(\\d+)ZZ", "g");
-    restored = restored.replace(regex, (match, index) => {
-      return protectedItems[parseInt(index, 10)] !== undefined
-        ? protectedItems[parseInt(index, 10)]
-        : match;
-    });
+  // Step 2: Restore numbers in order by replacing each DATASLOT one at a time
+  let slotIndex = 0;
+  let restored = claudeOutput.replace(/DATASLOT/g, () => {
+    const value = protectedItems[slotIndex];
+    slotIndex++;
+    return value !== undefined ? value : "DATASLOT";
   });
 
+  // Step 3: Synonym swap
   const synonyms = {
     "remains the core driver": ["still leads the way", "keeps driving results", "is still out front"],
     "surpassing": ["beating", "topping", "clearing"],
@@ -95,6 +92,7 @@ ${protectedText}`;
     restored = restored.replace(new RegExp(phrase, "gi"), replacement);
   });
 
+  // Step 4: Light cleanup
   restored = restored
     .replace(/\s+/g, " ")
     .replace(/\s+([,;:!?])/g, "$1")
