@@ -5,7 +5,6 @@ body {
   margin: 0;
   padding: 0;
 }
-
 .navbar {
   background: white;
   padding: 20px 40px;
@@ -14,60 +13,50 @@ body {
   align-items: center;
   box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }
-
 .logo {
   font-size: 24px;
   font-weight: bold;
 }
-
 .nav-links a {
   margin-left: 20px;
   text-decoration: none;
   color: #111827;
   font-weight: 600;
 }
-
 .hero {
   text-align: center;
   padding: 100px 20px 60px;
 }
-
 .hero h1 {
   font-size: 56px;
   max-width: 900px;
   margin: auto;
   line-height: 1.2;
 }
-
 .hero p {
   font-size: 22px;
   max-width: 850px;
   margin: 30px auto;
   line-height: 1.6;
 }
-
 h1 {
   font-size: 48px;
   margin-bottom: 20px;
   text-align: center;
 }
-
 h2 {
   margin-top: 0;
 }
-
 h3 {
   font-size: 32px;
   margin-top: 20px;
 }
-
 p {
   font-size: 20px;
   max-width: 700px;
   margin: auto;
   line-height: 1.6;
 }
-
 .pricing-box {
   background: white;
   max-width: 900px;
@@ -76,7 +65,6 @@ p {
   border-radius: 16px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
-
 textarea {
   width: 100%;
   height: 250px;
@@ -87,7 +75,6 @@ textarea {
   resize: vertical;
   box-sizing: border-box;
 }
-
 select {
   width: 100%;
   padding: 14px;
@@ -97,7 +84,6 @@ select {
   margin-bottom: 20px;
   box-sizing: border-box;
 }
-
 button {
   background-color: #111827;
   color: white;
@@ -108,11 +94,9 @@ button {
   cursor: pointer;
   margin-bottom: 30px;
 }
-
 button:hover {
   opacity: 0.9;
 }
-
 .output-box {
   background: #f9fafb;
   border: 1px solid #d1d5db;
@@ -123,9 +107,26 @@ button:hover {
   white-space: pre-wrap;
   line-height: 1.6;
 }
-
 .tool-note {
   font-size: 14px;
   color: #6b7280;
   margin-top: 20px;
+}
+.tool-disclaimer {
+  max-width: 800px;
+  margin: 20px auto;
+  padding: 0 20px;
+  text-align: center;
+}
+.tool-disclaimer p {
+  font-size: 11px;
+  color: #888;
+  line-height: 1.6;
+}
+.tool-disclaimer strong {
+  font-size: 11px;
+}
+.footer p {
+  font-size: 11px;
+  color: #888;
 }
