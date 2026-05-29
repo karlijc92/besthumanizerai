@@ -9,12 +9,15 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "No text provided" });
   }
 
+  // Step 1: Extract and replace numbers with plain word placeholders
   const protectedItems = [];
   const protectedText = text.replace(
     /(\$\d[\d,]*(?:\.\d+)?(?:\s?(?:billion|million|trillion|thousand))?|\d[\d,]*(?:\.\d+)?(?:\s?(?:billion|million|trillion|thousand))?\s?%|\d[\d,]*(?:\.\d+)?(?:\s?(?:billion|million|trillion|thousand))?|\bQ[1-4]\s?\d{4}\b|\b(?:19|20)\d{2}\b|\([A-Za-z]+,\s?(?:19|20)\d{2}\))/gi,
     (match) => {
       protectedItems.push(match.trim());
-      return `❌${protectedItems.length - 1}❌`;
+      const index = protectedItems.length - 1;
+      const words = ["AANUM", "BBNUM", "CCNUM", "DDNUM", "EENUM", "FFNUM", "GGNUM", "HHNUM", "IINUM", "JJNUM"];
+      return words[index % words.length] + String(index) + "ZZ";
     }
   );
 
@@ -31,7 +34,7 @@ export default async function handler(req, res) {
 
   const prompt = `You are a human writer. Rewrite the text below in a ${tone} tone.
 RULES:
-1. Tokens wrapped in ❌ like ❌0❌ ❌1❌ ❌2❌ are protected values. Keep every one exactly as-is. Do not split, modify, or remove them under any circumstances.
+1. Any token that looks like AANUM0ZZ, BBNUM1ZZ, CCNUM2ZZ etc. is a placeholder. Keep every single one EXACTLY as written — same letters, same number, same ZZ ending. Do not change them in any way.
 2. Use contractions. Use dashes. Vary sentence length.
 3. NEVER use: "notably", "furthermore", "moreover", "in conclusion", "it is important to note", "delve", "utilize", "showcasing", "highlighting", "underscoring", "no doubt about it", "here's where it gets interesting", "at least on the surface", "at least on paper", "the trajectory", "worth noting", "real momentum", "solid growth".
 4. Output ONLY the rewritten text. Nothing else.
@@ -62,17 +65,21 @@ ${protectedText}`;
     return res.status(500).json({ error: "Failed to reach Claude API" });
   }
 
-  // Restore numbers immediately
-  let restored = claudeOutput.replace(/❌(\d+)❌/g, (match, index) => {
-    return protectedItems[parseInt(index, 10)] !== undefined
-      ? protectedItems[parseInt(index, 10)]
-      : match;
+  // Step 2: Restore all placeholders back to original numbers
+  const words = ["AANUM", "BBNUM", "CCNUM", "DDNUM", "EENUM", "FFNUM", "GGNUM", "HHNUM", "IINUM", "JJNUM"];
+  let restored = claudeOutput;
+  words.forEach((word) => {
+    const regex = new RegExp(word + "(\\d+)ZZ", "g");
+    restored = restored.replace(regex, (match, index) => {
+      return protectedItems[parseInt(index, 10)] !== undefined
+        ? protectedItems[parseInt(index, 10)]
+        : match;
+    });
   });
 
-  // Synonym swap pass
+  // Step 3: Synonym swap
   const synonyms = {
     "remains the core driver": ["still leads the way", "keeps driving results", "is still out front"],
-    "remains": ["is still", "continues as", "stays"],
     "surpassing": ["beating", "topping", "clearing"],
     "allocated": ["put", "spent", "directed"],
     "materializes": ["plays out", "comes through", "holds"],
@@ -81,21 +88,18 @@ ${protectedText}`;
     "generating": ["bringing in", "pulling in", "producing"],
     "accounting for": ["making up", "representing", "covering"],
     "segment": ["side", "division", "part of the business"],
-    "rewarded": ["taken care of", "paid back", "returned value"],
-    "paints a picture of": ["shows", "points to", "suggests"],
     "demonstrates": ["shows", "points to", "reflects"],
-    "reliable expansion": ["continued growth", "steady gains", "consistent progress"],
     "reliable growth": ["continued growth", "steady gains", "consistent progress"],
+    "dependable growth": ["continued growth", "steady gains", "consistent progress"],
   };
 
   Object.keys(synonyms).forEach((phrase) => {
     const options = synonyms[phrase];
     const replacement = options[Math.floor(Math.random() * options.length)];
-    const regex = new RegExp(phrase, "gi");
-    restored = restored.replace(regex, replacement);
+    restored = restored.replace(new RegExp(phrase, "gi"), replacement);
   });
 
-  // Light cleanup
+  // Step 4: Light cleanup
   restored = restored
     .replace(/\s+/g, " ")
     .replace(/\s+([,;:!?])/g, "$1")
