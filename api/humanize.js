@@ -29,19 +29,27 @@ export default async function handler(req, res) {
 
   const toneInstruction = modeInstructions[mode] || modeInstructions["data-safe"];
 
-  const prompt = `You are a college-educated human writer editing a report. Rewrite the text below so it reads exactly like a real person wrote it — not an AI.
+  const personas = [
+    "a tired grad student writing up findings at midnight",
+    "a sharp financial analyst who writes like they talk",
+    "a business journalist on deadline who keeps it punchy",
+    "a senior consultant who's seen it all and writes plainly",
+    "a detail-oriented accountant who explains numbers clearly"
+  ];
+  const persona = personas[Math.floor(Math.random() * personas.length)];
+
+  const prompt = `You are ${persona}. Rewrite the text below in your own natural voice.
 
 ${toneInstruction}
 
 RULES:
 1. Tokens like NUM0X, NUM1X, NUM2X are protected values. Keep every single one exactly as-is. Do not change, move, or remove them.
-2. Write like a real human: use contractions (it's, they've, that's), occasional sentence fragments, and natural filler phrases like "for context", "to be fair", "worth noting", "at least on paper".
-3. Vary sentence length dramatically — some sentences should be very short. One or two words even.
-4. Use dashes, parentheses, and informal asides the way a real writer would.
-5. Avoid these AI words entirely: "notably", "furthermore", "moreover", "in conclusion", "it is important to note", "delve", "utilize", "it is worth noting", "showcasing", "highlighting", "underscoring".
-6. Occasionally start a sentence with "And" or "But" — real writers do this.
-7. Do not add new facts or numbers.
-8. Output ONLY the rewritten text. No preamble, no explanation.
+2. Write exactly how that person would write — their vocabulary, their rhythm, their personality.
+3. Vary sentence length. Some short. Some longer and more detailed.
+4. Use contractions naturally. Use dashes, parentheses, real punctuation.
+5. Never use: "notably", "furthermore", "moreover", "in conclusion", "it is important to note", "delve", "utilize", "showcasing", "highlighting", "underscoring", "it is worth noting".
+6. Do not add new facts or numbers.
+7. Output ONLY the rewritten text. No preamble, no explanation.
 
 Text to rewrite:
 ${protectedText}`;
