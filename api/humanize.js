@@ -9,6 +9,15 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: "No text provided" });
   }
 
+  const protectedItems = [];
+  const protectedText = text.replace(
+    /(\$\d[\d,]*(?:\.\d+)?(?:\s?(?:billion|million|trillion|thousand))?|\d[\d,]*(?:\.\d+)?(?:\s?(?:billion|million|trillion|thousand))?\s?%|\d[\d,]*(?:\.\d+)?(?:\s?(?:billion|million|trillion|thousand))?|\bQ[1-4]\s?\d{4}\b|\b(?:19|20)\d{2}\b|\([A-Za-z]+,\s?(?:19|20)\d{2}\))/gi,
+    (match) => {
+      protectedItems.push(match.trim());
+      return "DATASLOT";
+    }
+  );
+
   const modeInstructions = {
     "data-safe": "natural, conversational but professional",
     "academic": "formal academic",
@@ -20,74 +29,61 @@ module.exports = async function handler(req, res) {
 
   const tone = modeInstructions[mode] || modeInstructions["data-safe"];
 
-  // Split into sentences
-  const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
-
-  const sentenceStyles = [
-    "Rewrite this one sentence like a financial journalist. Keep it punchy.",
-    "Rewrite this one sentence like a smart analyst talking to a colleague.",
-    "Rewrite this one sentence conversationally. Short is fine.",
-    "Rewrite this one sentence directly. No fluff.",
-    "Rewrite this one sentence like a human who just read it and is summarizing it.",
+  const styles = [
+    "Write like a financial journalist on deadline — punchy, direct, no fluff.",
+    "Write like a senior analyst explaining this to a colleague over coffee.",
+    "Write like someone who just read this and is telling a friend what it said.",
+    "Write like a sharp MBA student who skips the corporate speak.",
+    "Write like a tired grad student who knows their stuff but writes how they think.",
   ];
+  const style = styles[Math.floor(Math.random() * styles.length)];
 
-  // Rewrite each sentence individually with its own protected numbers
-  const rewrittenSentences = await Promise.all(
-    sentences.map(async (sentence, i) => {
-      const sentenceProtectedItems = [];
-      const protectedSentence = sentence.replace(
-        /(\$\d[\d,]*(?:\.\d+)?(?:\s?(?:billion|million|trillion|thousand))?|\d[\d,]*(?:\.\d+)?(?:\s?(?:billion|million|trillion|thousand))?\s?%|\d[\d,]*(?:\.\d+)?(?:\s?(?:billion|million|trillion|thousand))?|\bQ[1-4]\s?\d{4}\b|\b(?:19|20)\d{2}\b|\([A-Za-z]+,\s?(?:19|20)\d{2}\))/gi,
-        (match) => {
-          sentenceProtectedItems.push(match.trim());
-          return "DATASLOT";
-        }
-      );
+  const prompt = `You are a human writer. ${style}
 
-      const style = sentenceStyles[i % sentenceStyles.length];
+Rewrite the text below in a ${tone} tone.
 
-      const prompt = `${style} Tone: ${tone}.
-The word DATASLOT is a number placeholder — keep every DATASLOT exactly as DATASLOT.
-Use contractions naturally. Never use: "notably", "furthermore", "moreover", "showcasing", "highlighting", "underscoring", "it is worth noting", "it is important to note".
-Output ONLY the rewritten sentence. Nothing else.
+STRICT RULES:
+1. The word DATASLOT is a number placeholder. Keep every DATASLOT exactly as the word DATASLOT. Do not replace, skip, add, or remove any DATASLOT. The number of DATASLOTs in your output must exactly match the number in the input.
+2. Keep sentences in the SAME ORDER as the original. Do not reorder, merge, or split sentences.
+3. Rewrite the words around the DATASLOTs — not the DATASLOTs themselves.
+4. Use contractions. Use dashes. Mix short and long sentences.
+5. Start 1 or 2 sentences with "And" or "But".
+6. NEVER use: "notably", "furthermore", "moreover", "in conclusion", "it is important to note", "delve", "utilize", "showcasing", "highlighting", "underscoring", "no doubt", "on the surface", "on paper", "the trajectory", "worth noting", "real momentum", "solid growth", "hitting its stride", "firing on all cylinders", "bottom line", "across the board", "at the end of the day".
+7. Output ONLY the rewritten text. No intro, no explanation, no questions.
 
-Sentence: ${protectedSentence.trim()}`;
+Text:
+${protectedText}`;
 
-      try {
-        const response = await fetch("https://api.anthropic.com/v1/messages", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-api-key": process.env.ANTHROPIC_API_KEY,
-            "anthropic-version": "2023-06-01",
-          },
-          body: JSON.stringify({
-            model: "claude-haiku-4-5-20251001",
-            max_tokens: 200,
-            messages: [{ role: "user", content: prompt }],
-          }),
-        });
+  let claudeOutput;
+  try {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": process.env.ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: 1024,
+        messages: [{ role: "user", content: prompt }],
+      }),
+    });
 
-        const data = await response.json();
-        if (!response.ok) return sentence;
+    const data = await response.json();
+    if (!response.ok) return res.status(500).json({ error: "Claude API error" });
+    claudeOutput = data.content[0].text;
+  } catch (err) {
+    return res.status(500).json({ error: "Failed to reach Claude API" });
+  }
 
-        let rewritten = data.content[0].text.trim();
-
-        // Restore numbers for this sentence only
-        let slotIndex = 0;
-        rewritten = rewritten.replace(/DATASLOT/g, () => {
-          const value = sentenceProtectedItems[slotIndex];
-          slotIndex++;
-          return value !== undefined ? value : "DATASLOT";
-        });
-
-        return rewritten;
-      } catch {
-        return sentence;
-      }
-    })
-  );
-
-  let restored = rewrittenSentences.join(" ");
+  // Restore numbers in order
+  let slotIndex = 0;
+  let restored = claudeOutput.replace(/DATASLOT/g, () => {
+    const value = protectedItems[slotIndex];
+    slotIndex++;
+    return value !== undefined ? value : "DATASLOT";
+  });
 
   // Light cleanup
   restored = restored
