@@ -11,10 +11,10 @@ export default async function handler(req, res) {
 
   const protectedItems = [];
   const protectedText = text.replace(
-    /(\$[\d,]+(?:\.\d+)?(?:\s?(?:billion|million|trillion|thousand))?|\d+(?:,\d{3})*(?:\.\d+)?(?:\s?(?:billion|million|trillion|thousand))?%?|\bQ[1-4]\s?\d{4}\b|\b(?:19|20)\d{2}\b|\([A-Za-z]+,\s?(?:19|20)\d{2}\))/gi,
+    /(\$\d[\d,]*(?:\.\d+)?(?:\s?(?:billion|million|trillion|thousand))?|\d[\d,]*(?:\.\d+)?(?:\s?(?:billion|million|trillion|thousand))?\s?%|\d[\d,]*(?:\.\d+)?(?:\s?(?:billion|million|trillion|thousand))?|\bQ[1-4]\s?\d{4}\b|\b(?:19|20)\d{2}\b|\([A-Za-z]+,\s?(?:19|20)\d{2}\))/gi,
     (match) => {
-      protectedItems.push(match);
-      return `NUM${protectedItems.length - 1}X`;
+      protectedItems.push(match.trim());
+      return `❌${protectedItems.length - 1}❌`;
     }
   );
 
@@ -31,7 +31,7 @@ export default async function handler(req, res) {
 
   const prompt = `You are a human writer. Rewrite the text below in a ${tone} tone.
 RULES:
-1. Tokens like NUM0X, NUM1X, NUM2X are protected. Keep every one exactly as-is.
+1. Tokens wrapped in ❌ like ❌0❌ ❌1❌ ❌2❌ are protected values. Keep every one exactly as-is. Do not split, modify, or remove them under any circumstances.
 2. Use contractions. Use dashes. Vary sentence length.
 3. NEVER use: "notably", "furthermore", "moreover", "in conclusion", "it is important to note", "delve", "utilize", "showcasing", "highlighting", "underscoring", "no doubt about it", "here's where it gets interesting", "at least on the surface", "at least on paper", "the trajectory", "worth noting", "real momentum", "solid growth".
 4. Output ONLY the rewritten text. Nothing else.
@@ -62,14 +62,14 @@ ${protectedText}`;
     return res.status(500).json({ error: "Failed to reach Claude API" });
   }
 
-  // Restore numbers first before anything else
-  let restored = claudeOutput.replace(/NUM(\d+)X/g, (match, index) => {
+  // Restore numbers immediately
+  let restored = claudeOutput.replace(/❌(\d+)❌/g, (match, index) => {
     return protectedItems[parseInt(index, 10)] !== undefined
       ? protectedItems[parseInt(index, 10)]
       : match;
   });
 
-  // Synonym swap pass — breaks Claude's pattern without touching numbers
+  // Synonym swap pass
   const synonyms = {
     "remains the core driver": ["still leads the way", "keeps driving results", "is still out front"],
     "remains": ["is still", "continues as", "stays"],
@@ -82,10 +82,10 @@ ${protectedText}`;
     "accounting for": ["making up", "representing", "covering"],
     "segment": ["side", "division", "part of the business"],
     "rewarded": ["taken care of", "paid back", "returned value"],
-    "core": ["main", "primary", "biggest"],
     "paints a picture of": ["shows", "points to", "suggests"],
-    "steady momentum": ["consistent growth", "a solid run", "continued progress"],
-    "come alive": ["stand out", "pick up", "get interesting"],
+    "demonstrates": ["shows", "points to", "reflects"],
+    "reliable expansion": ["continued growth", "steady gains", "consistent progress"],
+    "reliable growth": ["continued growth", "steady gains", "consistent progress"],
   };
 
   Object.keys(synonyms).forEach((phrase) => {
@@ -95,11 +95,10 @@ ${protectedText}`;
     restored = restored.replace(regex, replacement);
   });
 
-  // Light cleanup only
+  // Light cleanup
   restored = restored
     .replace(/\s+/g, " ")
-    .replace(/\s+([.,;:!?])/g, "$1")
-    .replace(/([.,;:!?])([A-Za-z])/g, "$1 $2")
+    .replace(/\s+([,;:!?])/g, "$1")
     .replace(/\s*—\s*/g, " — ")
     .trim();
 
