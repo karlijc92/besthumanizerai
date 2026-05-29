@@ -35,8 +35,9 @@ RULES:
 1. Tokens like NUM0X, NUM1X, NUM2X are protected. Keep every one exactly as-is.
 2. Use contractions. Use dashes. Use parentheses.
 3. Vary sentence length — some very short, some longer.
-4. Never use: "notably", "furthermore", "moreover", "in conclusion", "it is important to note", "delve", "utilize", "showcasing", "highlighting", "underscoring".
-5. Output ONLY the rewritten text.
+4. NEVER use these phrases under any circumstances: "no doubt about it", "here's where it gets interesting", "but here's the thing", "at least on the surface", "at least on paper", "the trajectory", "pointing upward", "heading in the right direction", "worth noting", "it's worth", "real momentum", "real growth", "solid growth", "notably", "furthermore", "moreover", "in conclusion", "it is important to note", "delve", "utilize", "showcasing", "highlighting", "underscoring".
+5. Do not use filler transition phrases. Just say the thing directly.
+6. Output ONLY the rewritten text. Nothing else.
 
 Text:
 ${protectedText}`;
@@ -64,49 +65,20 @@ ${protectedText}`;
     return res.status(500).json({ error: "Failed to reach Claude API" });
   }
 
-  // ── Human imperfection pass ──────────────────────────────────
-  function humanizeOutput(text) {
-    const aiPhrases = [
-      [/at least on paper,?\s*/gi, ""],
-      [/it's worth (mentioning|noting) that\s*/gi, ""],
-      [/that's where it gets interesting\.?/gi, ""],
-      [/pretty solid (growth|results|numbers),?\s*/gi, ""],
-      [/honestly,?\s*/gi, ""],
-      [/so yeah,?\s*/gi, ""],
-      [/looking ahead,?\s*/gi, "Going forward, "],
-      [/if that (happens|pans out),?\s*/gi, "If that holds, "],
-      [/which (works out to|translates to|gives)/gi, "coming in at"],
-      [/that's a meaningful bump\.?/gi, "Real growth."],
-      [/that's a solid jump\.?/gi, ""],
-      [/things are heading in the right direction\.?/gi, "the trend is positive."],
-    ];
-
-    let result = text;
-    aiPhrases.forEach(([pattern, replacement]) => {
-      result = result.replace(pattern, replacement);
-    });
-
-    // Break up any sentence over 35 words with a dash
-    result = result.replace(/([^.!?]{120,}?),\s*/g, "$1 — ");
-
-    // Fix any double spaces or broken punctuation
-    result = result
-      .replace(/\s+/g, " ")
-      .replace(/\s+([.,;:!?])/g, "$1")
-      .replace(/([.,;:!?])([A-Za-z])/g, "$1 $2")
-      .replace(/\s*—\s*/g, " — ")
-      .trim();
-
-    return result;
-  }
-
+  // Restore protected values
   let restored = claudeOutput.replace(/NUM(\d+)X/g, (match, index) => {
     return protectedItems[parseInt(index, 10)] !== undefined
       ? protectedItems[parseInt(index, 10)]
       : match;
   });
 
-  restored = humanizeOutput(restored);
+  // Light cleanup only — no aggressive replacements that corrupt sentences
+  restored = restored
+    .replace(/\s+/g, " ")
+    .replace(/\s+([.,;:!?])/g, "$1")
+    .replace(/([.,;:!?])([A-Za-z])/g, "$1 $2")
+    .replace(/\s*—\s*/g, " — ")
+    .trim();
 
   return res.status(200).json({ result: restored });
 }
