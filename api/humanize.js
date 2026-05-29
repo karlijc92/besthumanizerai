@@ -1,4 +1,4 @@
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
@@ -9,7 +9,6 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "No text provided" });
   }
 
-  // Step 1: Extract and replace numbers with plain word placeholders
   const protectedItems = [];
   const protectedText = text.replace(
     /(\$\d[\d,]*(?:\.\d+)?(?:\s?(?:billion|million|trillion|thousand))?|\d[\d,]*(?:\.\d+)?(?:\s?(?:billion|million|trillion|thousand))?\s?%|\d[\d,]*(?:\.\d+)?(?:\s?(?:billion|million|trillion|thousand))?|\bQ[1-4]\s?\d{4}\b|\b(?:19|20)\d{2}\b|\([A-Za-z]+,\s?(?:19|20)\d{2}\))/gi,
@@ -65,7 +64,6 @@ ${protectedText}`;
     return res.status(500).json({ error: "Failed to reach Claude API" });
   }
 
-  // Step 2: Restore all placeholders back to original numbers
   const words = ["AANUM", "BBNUM", "CCNUM", "DDNUM", "EENUM", "FFNUM", "GGNUM", "HHNUM", "IINUM", "JJNUM"];
   let restored = claudeOutput;
   words.forEach((word) => {
@@ -77,7 +75,6 @@ ${protectedText}`;
     });
   });
 
-  // Step 3: Synonym swap
   const synonyms = {
     "remains the core driver": ["still leads the way", "keeps driving results", "is still out front"],
     "surpassing": ["beating", "topping", "clearing"],
@@ -87,7 +84,6 @@ ${protectedText}`;
     "translating to": ["giving them", "working out to", "meaning"],
     "generating": ["bringing in", "pulling in", "producing"],
     "accounting for": ["making up", "representing", "covering"],
-    "segment": ["side", "division", "part of the business"],
     "demonstrates": ["shows", "points to", "reflects"],
     "reliable growth": ["continued growth", "steady gains", "consistent progress"],
     "dependable growth": ["continued growth", "steady gains", "consistent progress"],
@@ -99,7 +95,6 @@ ${protectedText}`;
     restored = restored.replace(new RegExp(phrase, "gi"), replacement);
   });
 
-  // Step 4: Light cleanup
   restored = restored
     .replace(/\s+/g, " ")
     .replace(/\s+([,;:!?])/g, "$1")
@@ -107,4 +102,4 @@ ${protectedText}`;
     .trim();
 
   return res.status(200).json({ result: restored });
-}
+};
