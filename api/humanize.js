@@ -9,6 +9,7 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: "No text provided" });
   }
 
+  // Lock numbers, citations, years, percentages
   const protectedItems = [];
   const protectedText = text.replace(
     /(\$\d[\d,]*(?:\.\d+)?(?:\s?(?:billion|million|trillion|thousand))?|\d[\d,]*(?:\.\d+)?(?:\s?(?:billion|million|trillion|thousand))?\s?%|\d[\d,]*(?:\.\d+)?(?:\s?(?:billion|million|trillion|thousand))?|\bQ[1-4]\s?\d{4}\b|\b(?:19|20)\d{2}\b|\([A-Za-z]+,\s?(?:19|20)\d{2}\))/gi,
@@ -18,45 +19,65 @@ module.exports = async function handler(req, res) {
     }
   );
 
-  const modeInstructions = {
-    "data-safe": "natural, conversational but professional",
+  const toneMap = {
+    "data-safe": "natural and conversational but professional",
     "academic": "formal academic",
     "business": "professional business report",
     "executive": "concise executive summary",
-    "resume": "strong action-oriented resume",
+    "resume": "strong action-oriented",
     "plain": "simple plain English",
   };
 
-  const tone = modeInstructions[mode] || modeInstructions["data-safe"];
+  const tone = toneMap[mode] || toneMap["data-safe"];
 
-  const styles = [
-    "Write like a financial journalist on deadline — punchy, direct, no fluff.",
-    "Write like a senior analyst explaining this to a colleague over coffee.",
-    "Write like someone who just read this and is telling a friend what it said.",
-    "Write like a sharp MBA student who skips the corporate speak.",
-    "Write like a tired grad student who knows their stuff but writes how they think.",
+  // Randomized writer personas — more varied and unpredictable
+  const personas = [
+    "You're a financial journalist who writes fast and cuts every unnecessary word. You hate corporate jargon. You write how you think.",
+    "You're a senior analyst who explains things like you're talking to a smart colleague, not writing a report. Casual but sharp.",
+    "You're a grad student who knows this material cold but writes how real people talk — not how textbooks sound.",
+    "You're an editor at a business magazine. You make dense financial writing readable without dumbing it down.",
+    "You're a consultant who's been in the industry 20 years. You write bluntly, confidently, and without filler.",
+    "You're a blogger who covers finance. You make numbers feel real to people, not just analysts.",
   ];
-  const style = styles[Math.floor(Math.random() * styles.length)];
+  const persona = personas[Math.floor(Math.random() * personas.length)];
 
-  const prompt = `You are a human writer. ${style}
+  // Sentence variation instructions — randomized
+  const variations = [
+    "Mix sentence lengths aggressively. Some very short. Some longer and flowing.",
+    "Use a question somewhere if it fits naturally. Break up the rhythm.",
+    "Start at least one sentence with And or But. It's fine — real writers do it.",
+    "Use a dash or two where a comma feels too formal.",
+    "Let one sentence stand alone as its own paragraph if it lands harder that way.",
+  ];
+  // Pick 2 random variation instructions
+  const picked = variations.sort(() => 0.5 - Math.random()).slice(0, 2).join(" ");
 
-Rewrite the text below in a ${tone} tone.
+  // Pass 1 prompt — rewrite
+  const pass1 = `${persona}
 
-STRICT RULES:
-1. The word DATASLOT is a number placeholder. Keep every DATASLOT exactly as the word DATASLOT. Do not replace, skip, add, or remove any DATASLOT. The number of DATASLOTs in your output must exactly match the number in the input.
-2. Keep sentences in the SAME ORDER as the original. Do not reorder, merge, or split sentences.
-3. Rewrite the words around the DATASLOTs — not the DATASLOTs themselves.
-4. Use contractions. Use dashes. Mix short and long sentences.
-5. Start 1 or 2 sentences with "And" or "But".
-6. NEVER use these words or phrases: "notably", "furthermore", "moreover", "in conclusion", "it is important to note", "delve", "utilize", "showcasing", "highlighting", "underscoring", "no doubt", "on the surface", "on paper", "the trajectory", "worth noting", "real momentum", "solid growth", "hitting its stride", "firing on all cylinders", "bottom line", "across the board", "at the end of the day", "here's where it gets interesting", "but here's the thing", "that's where it gets", "interesting to note", "it's worth", "paint a picture", "tells a story", "speaks volumes", "makes it clear".
-7. Output ONLY the rewritten text. No intro, no explanation, no questions.
+Rewrite the following text in a ${tone} tone. ${picked}
+
+Rules you must follow:
+- DATASLOT is a placeholder for a number or citation. Never change, move, or remove any DATASLOT. Count them — your output must have the exact same number as the input.
+- Do not change the order of the information.
+- Never use: notably, furthermore, moreover, in conclusion, it is important to note, delve, utilize, showcasing, highlighting, underscoring, it is worth noting, on the surface, the trajectory, across the board, at the end of the day, bottom line, speaks volumes, tells a story, paint a picture, firing on all cylinders, real momentum, solid growth.
+- Output only the rewritten text. Nothing else.
 
 Text:
 ${protectedText}`;
 
-  let claudeOutput;
+  // Pass 2 prompt — humanize further
+  const pass2Instructions = [
+    "Read this and make it sound even more like a real person wrote it. Vary the rhythm. If anything sounds stiff or robotic fix it. Keep all DATASLOT placeholders exactly as they are.",
+    "Polish this so it sounds less like AI wrote it. Break up any sentences that feel too smooth or formulaic. Keep all DATASLOT placeholders exactly as they are.",
+    "Make this feel more natural and human. If two sentences sound too similar in structure, change one of them. Keep all DATASLOT placeholders exactly as they are.",
+  ];
+  const pass2 = pass2Instructions[Math.floor(Math.random() * pass2Instructions.length)];
+
+  let finalOutput;
   try {
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
+    // Pass 1 — rewrite
+    const res1 = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -64,22 +85,46 @@ ${protectedText}`;
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-haiku-4-5-20251001",
+        model: "claude-sonnet-4-20250514",
         max_tokens: 1024,
-        messages: [{ role: "user", content: prompt }],
+        messages: [{ role: "user", content: pass1 }],
       }),
     });
 
-    const data = await response.json();
-    if (!response.ok) return res.status(500).json({ error: "Claude API error" });
-    claudeOutput = data.content[0].text;
+    const data1 = await res1.json();
+    if (!res1.ok) return res.status(500).json({ error: "Claude API error on pass 1" });
+    const pass1Output = data1.content[0].text;
+
+    // Pass 2 — humanize
+    const res2 = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": process.env.ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1024,
+        messages: [
+          { role: "user", content: pass1 },
+          { role: "assistant", content: pass1Output },
+          { role: "user", content: pass2 },
+        ],
+      }),
+    });
+
+    const data2 = await res2.json();
+    if (!res2.ok) return res.status(500).json({ error: "Claude API error on pass 2" });
+    finalOutput = data2.content[0].text;
+
   } catch (err) {
     return res.status(500).json({ error: "Failed to reach Claude API" });
   }
 
   // Restore numbers in order
   let slotIndex = 0;
-  let restored = claudeOutput.replace(/DATASLOT/g, () => {
+  let restored = finalOutput.replace(/DATASLOT/g, () => {
     const value = protectedItems[slotIndex];
     slotIndex++;
     return value !== undefined ? value : "DATASLOT";
