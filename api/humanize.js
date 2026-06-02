@@ -9,7 +9,6 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: "No text provided" });
   }
 
-  // Lock numbers, citations, years, percentages
   const protectedItems = [];
   const protectedText = text.replace(
     /(\$\d[\d,]*(?:\.\d+)?(?:\s?(?:billion|million|trillion|thousand))?|\d[\d,]*(?:\.\d+)?(?:\s?(?:billion|million|trillion|thousand))?\s?%|\d[\d,]*(?:\.\d+)?(?:\s?(?:billion|million|trillion|thousand))?|\bQ[1-4]\s?\d{4}\b|\b(?:19|20)\d{2}\b|\([A-Za-z]+,\s?(?:19|20)\d{2}\))/gi,
@@ -30,7 +29,6 @@ module.exports = async function handler(req, res) {
 
   const tone = toneMap[mode] || toneMap["data-safe"];
 
-  // Randomized writer personas — more varied and unpredictable
   const personas = [
     "You're a financial journalist who writes fast and cuts every unnecessary word. You hate corporate jargon. You write how you think.",
     "You're a senior analyst who explains things like you're talking to a smart colleague, not writing a report. Casual but sharp.",
@@ -41,7 +39,6 @@ module.exports = async function handler(req, res) {
   ];
   const persona = personas[Math.floor(Math.random() * personas.length)];
 
-  // Sentence variation instructions — randomized
   const variations = [
     "Mix sentence lengths aggressively. Some very short. Some longer and flowing.",
     "Use a question somewhere if it fits naturally. Break up the rhythm.",
@@ -49,10 +46,8 @@ module.exports = async function handler(req, res) {
     "Use a dash or two where a comma feels too formal.",
     "Let one sentence stand alone as its own paragraph if it lands harder that way.",
   ];
-  // Pick 2 random variation instructions
   const picked = variations.sort(() => 0.5 - Math.random()).slice(0, 2).join(" ");
 
-  // Pass 1 prompt — rewrite
   const pass1 = `${persona}
 
 Rewrite the following text in a ${tone} tone. ${picked}
@@ -66,7 +61,6 @@ Rules you must follow:
 Text:
 ${protectedText}`;
 
-  // Pass 2 prompt — humanize further
   const pass2Instructions = [
     "Read this and make it sound even more like a real person wrote it. Vary the rhythm. If anything sounds stiff or robotic fix it. Keep all DATASLOT placeholders exactly as they are.",
     "Polish this so it sounds less like AI wrote it. Break up any sentences that feel too smooth or formulaic. Keep all DATASLOT placeholders exactly as they are.",
@@ -76,7 +70,6 @@ ${protectedText}`;
 
   let finalOutput;
   try {
-    // Pass 1 — rewrite
     const res1 = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -85,17 +78,16 @@ ${protectedText}`;
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
+        model: "claude-sonnet-4-6",
         max_tokens: 1024,
         messages: [{ role: "user", content: pass1 }],
       }),
     });
 
     const data1 = await res1.json();
-    if (!res1.ok) return res.status(500).json({ error: "Claude API error on pass 1" });
+    if (!res1.ok) return res.status(500).json({ error: "Claude API error on pass 1", detail: data1 });
     const pass1Output = data1.content[0].text;
 
-    // Pass 2 — humanize
     const res2 = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -104,7 +96,7 @@ ${protectedText}`;
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
+        model: "claude-sonnet-4-6",
         max_tokens: 1024,
         messages: [
           { role: "user", content: pass1 },
@@ -115,14 +107,13 @@ ${protectedText}`;
     });
 
     const data2 = await res2.json();
-    if (!res2.ok) return res.status(500).json({ error: "Claude API error on pass 2" });
+    if (!res2.ok) return res.status(500).json({ error: "Claude API error on pass 2", detail: data2 });
     finalOutput = data2.content[0].text;
 
   } catch (err) {
-    return res.status(500).json({ error: "Failed to reach Claude API" });
+    return res.status(500).json({ error: "Failed to reach Claude API", detail: err.message });
   }
 
-  // Restore numbers in order
   let slotIndex = 0;
   let restored = finalOutput.replace(/DATASLOT/g, () => {
     const value = protectedItems[slotIndex];
@@ -130,7 +121,6 @@ ${protectedText}`;
     return value !== undefined ? value : "DATASLOT";
   });
 
-  // Light cleanup
   restored = restored
     .replace(/\s+/g, " ")
     .replace(/\s+([,;:!?])/g, "$1")
