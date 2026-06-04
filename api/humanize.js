@@ -9,14 +9,18 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: "No text provided" });
   }
 
-  const protectedItems = [];
+  // ── PROTECTION: named slots instead of sequential DATASLOT ──────────────
+  const slotMap = {};
+  let slotCounter = 0;
   const protectedText = text.replace(
     /(\$\d[\d,]*(?:\.\d+)?(?:\s?(?:billion|million|trillion|thousand))?|\d[\d,]*(?:\.\d+)?(?:\s?(?:billion|million|trillion|thousand))?\s?%|\d[\d,]*(?:\.\d+)?(?:\s?(?:billion|million|trillion|thousand))?|\bQ[1-4]\s?\d{4}\b|\b(?:19|20)\d{2}\b|\([A-Za-z]+,\s?(?:19|20)\d{2}\))/gi,
     (match) => {
-      protectedItems.push(match.trim());
-      return "DATASLOT";
+      const key = `DATASLOT${slotCounter++}`;
+      slotMap[key] = match.trim();
+      return key;
     }
   );
+  // ────────────────────────────────────────────────────────────────────────
 
   const toneMap = {
     "data-safe": "natural and conversational but professional",
@@ -53,7 +57,7 @@ module.exports = async function handler(req, res) {
 Rewrite the following text in a ${tone} tone. ${picked}
 
 Rules you must follow:
-- DATASLOT is a placeholder for a number or citation. Never change, move, or remove any DATASLOT. Count them — your output must have the exact same number as the input.
+- DATASLOT0, DATASLOT1, DATASLOT2 etc. are placeholders for numbers and citations. Never change, move, reorder, or remove any DATASLOT token. Each one has a unique number — preserve the exact token name.
 - Do not change the order of the information.
 - Never use: notably, furthermore, moreover, in conclusion, it is important to note, delve, utilize, showcasing, highlighting, underscoring, it is worth noting, on the surface, the trajectory, across the board, at the end of the day, bottom line, speaks volumes, tells a story, paint a picture, firing on all cylinders, real momentum, solid growth.
 - Output only the rewritten text. Nothing else.
@@ -62,9 +66,9 @@ Text:
 ${protectedText}`;
 
   const pass2Instructions = [
-    "Read this and make it sound even more like a real person wrote it. Vary the rhythm. If anything sounds stiff or robotic fix it. Keep all DATASLOT placeholders exactly as they are.",
-    "Polish this so it sounds less like AI wrote it. Break up any sentences that feel too smooth or formulaic. Keep all DATASLOT placeholders exactly as they are.",
-    "Make this feel more natural and human. If two sentences sound too similar in structure, change one of them. Keep all DATASLOT placeholders exactly as they are.",
+    "Read this and make it sound even more like a real person wrote it. Vary the rhythm. If anything sounds stiff or robotic fix it. Keep all DATASLOTn placeholders exactly as they are.",
+    "Polish this so it sounds less like AI wrote it. Break up any sentences that feel too smooth or formulaic. Keep all DATASLOTn placeholders exactly as they are.",
+    "Make this feel more natural and human. If two sentences sound too similar in structure, change one of them. Keep all DATASLOTn placeholders exactly as they are.",
   ];
   const pass2 = pass2Instructions[Math.floor(Math.random() * pass2Instructions.length)];
 
@@ -114,12 +118,11 @@ ${protectedText}`;
     return res.status(500).json({ error: "Failed to reach Claude API", detail: err.message });
   }
 
-  let slotIndex = 0;
-  let restored = finalOutput.replace(/DATASLOT/g, () => {
-    const value = protectedItems[slotIndex];
-    slotIndex++;
-    return value !== undefined ? value : "DATASLOT";
+  // ── RESTORATION: each named slot restores to its exact original value ────
+  let restored = finalOutput.replace(/DATASLOT\d+/g, (match) => {
+    return slotMap[match] !== undefined ? slotMap[match] : match;
   });
+  // ────────────────────────────────────────────────────────────────────────
 
   restored = restored
     .replace(/\s+/g, " ")
