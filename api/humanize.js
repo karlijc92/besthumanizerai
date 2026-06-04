@@ -9,7 +9,6 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: "No text provided" });
   }
 
-  // ── PROTECTION: named slots instead of sequential DATASLOT ──────────────
   const slotMap = {};
   let slotCounter = 0;
   const protectedText = text.replace(
@@ -20,7 +19,6 @@ module.exports = async function handler(req, res) {
       return key;
     }
   );
-  // ────────────────────────────────────────────────────────────────────────
 
   const toneMap = {
     "data-safe": "natural and conversational but professional",
@@ -33,29 +31,30 @@ module.exports = async function handler(req, res) {
 
   const tone = toneMap[mode] || toneMap["data-safe"];
 
-  const pass1 = `You're a person texting a smart friend about something you just read. You know the material cold. You're not writing a report — you're just telling them what happened, in your own words, the way you actually talk.
+  const pass1 = `You are a person typing notes to yourself after reading an earnings report. Not a summary — just your running thoughts as you go through it. You skip words sometimes. You don't finish every thought perfectly. You react as you go.
 
 Rewrite the following text in a ${tone} tone.
 
 Rules:
 - DATASLOT0, DATASLOT1, DATASLOT2 etc. are placeholders for numbers. Never change, move, reorder, or remove any DATASLOT token. Preserve the exact token name.
-- Write like a human being. Uneven sentences. Some very short. Some run on a bit longer than they should. That's fine.
-- Don't organize it like a list. Don't make it feel structured. Just tell it straight.
-- You're allowed to editorialize slightly — one small reaction or observation is fine.
-- Start at least one sentence with But, So, or And.
-- Never use: notably, furthermore, moreover, in conclusion, it is important to note, delve, utilize, showcasing, highlighting, underscoring, it is worth noting, on the surface, the trajectory, across the board, at the end of the day, bottom line, speaks volumes, tells a story, paint a picture, this demonstrates, this highlights, one can see.
+- Sentence lengths must vary wildly. Some one word. Some four words. Occasionally one longer one. Never two the same length back to back.
+- Drop words that a real person would drop. "Net cash at DATASLOT" not "the net cash position sits at DATASLOT".
+- No sentence should feel like it was crafted. They should feel typed.
+- At least one sentence should be a pure fragment.
+- At least one sentence should start mid-thought, like you're continuing something.
+- Never use: notably, furthermore, moreover, in conclusion, it is important to note, delve, utilize, showcasing, highlighting, underscoring, it is worth noting, on the surface, the trajectory, across the board, at the end of the day, bottom line, speaks volumes, tells a story, paint a picture, this demonstrates, this highlights, one can see, it is clear, it is evident.
 - Output only the rewritten text. Nothing else.
 
 Text:
 ${protectedText}`;
 
-  const pass2 = `This still looks like it was written by AI. Too structured. Too complete. Too clean.
+  const pass2 = `Read every sentence. For each one ask: could an AI have written this? If yes — break it.
 
-I need you to mess it up the way a real person would. Here's how:
-- Find the sentence that sounds most "written" and cut it in half or break its structure
-- Add one moment where the writer loses their train of thought slightly and recovers — like "actually," or "wait —" or "which, honestly,"
-- Make at least two sentences feel slightly unfinished or abrupt
-- Do NOT make it prettier. Make it rougher.
+Specifically:
+- Any sentence longer than 15 words that flows smoothly: cut it or interrupt it with a dash mid-thought
+- Any two consecutive sentences with similar structure: change one of them completely
+- Any sentence that ends too neatly: cut the last few words off or add a fragment after it
+- Scatter the rhythm so no two adjacent sentences feel related in length or structure
 - Keep all DATASLOTn placeholders exactly as they are
 - Output only the rewritten text. Nothing else.`;
 
@@ -105,11 +104,9 @@ I need you to mess it up the way a real person would. Here's how:
     return res.status(500).json({ error: "Failed to reach Claude API", detail: err.message });
   }
 
-  // ── RESTORATION: each named slot restores to its exact original value ────
   let restored = finalOutput.replace(/DATASLOT\d+/g, (match) => {
     return slotMap[match] !== undefined ? slotMap[match] : match;
   });
-  // ────────────────────────────────────────────────────────────────────────
 
   restored = restored
     .replace(/\s+/g, " ")
