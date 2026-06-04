@@ -33,23 +33,31 @@ module.exports = async function handler(req, res) {
 
   const tone = toneMap[mode] || toneMap["data-safe"];
 
-  const pass1 = `You are a blunt, experienced financial journalist. You write how you think — fast, direct, no filler. You use short sentences when they land harder. You use fragments on purpose. You use dashes where a comma feels too stiff. You never over-explain.
+  const pass1 = `You're a person texting a smart friend about something you just read. You know the material cold. You're not writing a report — you're just telling them what happened, in your own words, the way you actually talk.
 
 Rewrite the following text in a ${tone} tone.
 
-Rules you must follow:
-- DATASLOT0, DATASLOT1, DATASLOT2 etc. are placeholders for numbers and citations. Never change, move, reorder, or remove any DATASLOT token. Each one has a unique number — preserve the exact token name.
-- Mix sentence lengths. Some short. Some longer. Never three in a row the same length.
-- Use at least one fragment or one sentence starting with And, But, or So.
-- Use a dash instead of a comma at least once where it feels natural.
-- Do not change the order of the information.
-- Never use: notably, furthermore, moreover, in conclusion, it is important to note, delve, utilize, showcasing, highlighting, underscoring, it is worth noting, on the surface, the trajectory, across the board, at the end of the day, bottom line, speaks volumes, tells a story, paint a picture, firing on all cylinders, real momentum, solid growth, it is worth noting, one can see, this demonstrates, this highlights.
+Rules:
+- DATASLOT0, DATASLOT1, DATASLOT2 etc. are placeholders for numbers. Never change, move, reorder, or remove any DATASLOT token. Preserve the exact token name.
+- Write like a human being. Uneven sentences. Some very short. Some run on a bit longer than they should. That's fine.
+- Don't organize it like a list. Don't make it feel structured. Just tell it straight.
+- You're allowed to editorialize slightly — one small reaction or observation is fine.
+- Start at least one sentence with But, So, or And.
+- Never use: notably, furthermore, moreover, in conclusion, it is important to note, delve, utilize, showcasing, highlighting, underscoring, it is worth noting, on the surface, the trajectory, across the board, at the end of the day, bottom line, speaks volumes, tells a story, paint a picture, this demonstrates, this highlights, one can see.
 - Output only the rewritten text. Nothing else.
 
 Text:
 ${protectedText}`;
 
-  const pass2 = `Read this again. Find any sentence that still sounds like it was generated — too smooth, too balanced, too complete. Break it. Shorten it. Cut a word. Make it sound like a person who knows this stuff and doesn't need to prove it. Keep all DATASLOTn placeholders exactly as they are. Output only the rewritten text.`;
+  const pass2 = `This still looks like it was written by AI. Too structured. Too complete. Too clean.
+
+I need you to mess it up the way a real person would. Here's how:
+- Find the sentence that sounds most "written" and cut it in half or break its structure
+- Add one moment where the writer loses their train of thought slightly and recovers — like "actually," or "wait —" or "which, honestly,"
+- Make at least two sentences feel slightly unfinished or abrupt
+- Do NOT make it prettier. Make it rougher.
+- Keep all DATASLOTn placeholders exactly as they are
+- Output only the rewritten text. Nothing else.`;
 
   let finalOutput;
   try {
