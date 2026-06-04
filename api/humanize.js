@@ -33,44 +33,23 @@ module.exports = async function handler(req, res) {
 
   const tone = toneMap[mode] || toneMap["data-safe"];
 
-  const personas = [
-    "You're a financial journalist who writes fast and cuts every unnecessary word. You hate corporate jargon. You write how you think.",
-    "You're a senior analyst who explains things like you're talking to a smart colleague, not writing a report. Casual but sharp.",
-    "You're a grad student who knows this material cold but writes how real people talk — not how textbooks sound.",
-    "You're an editor at a business magazine. You make dense financial writing readable without dumbing it down.",
-    "You're a consultant who's been in the industry 20 years. You write bluntly, confidently, and without filler.",
-    "You're a blogger who covers finance. You make numbers feel real to people, not just analysts.",
-  ];
-  const persona = personas[Math.floor(Math.random() * personas.length)];
+  const pass1 = `You are a blunt, experienced financial journalist. You write how you think — fast, direct, no filler. You use short sentences when they land harder. You use fragments on purpose. You use dashes where a comma feels too stiff. You never over-explain.
 
-  const variations = [
-    "Mix sentence lengths aggressively. Some very short. Some longer and flowing.",
-    "Use a question somewhere if it fits naturally. Break up the rhythm.",
-    "Start at least one sentence with And or But. It's fine — real writers do it.",
-    "Use a dash or two where a comma feels too formal.",
-    "Let one sentence stand alone as its own paragraph if it lands harder that way.",
-  ];
-  const picked = variations.sort(() => 0.5 - Math.random()).slice(0, 2).join(" ");
-
-  const pass1 = `${persona}
-
-Rewrite the following text in a ${tone} tone. ${picked}
+Rewrite the following text in a ${tone} tone.
 
 Rules you must follow:
 - DATASLOT0, DATASLOT1, DATASLOT2 etc. are placeholders for numbers and citations. Never change, move, reorder, or remove any DATASLOT token. Each one has a unique number — preserve the exact token name.
+- Mix sentence lengths. Some short. Some longer. Never three in a row the same length.
+- Use at least one fragment or one sentence starting with And, But, or So.
+- Use a dash instead of a comma at least once where it feels natural.
 - Do not change the order of the information.
-- Never use: notably, furthermore, moreover, in conclusion, it is important to note, delve, utilize, showcasing, highlighting, underscoring, it is worth noting, on the surface, the trajectory, across the board, at the end of the day, bottom line, speaks volumes, tells a story, paint a picture, firing on all cylinders, real momentum, solid growth.
+- Never use: notably, furthermore, moreover, in conclusion, it is important to note, delve, utilize, showcasing, highlighting, underscoring, it is worth noting, on the surface, the trajectory, across the board, at the end of the day, bottom line, speaks volumes, tells a story, paint a picture, firing on all cylinders, real momentum, solid growth, it is worth noting, one can see, this demonstrates, this highlights.
 - Output only the rewritten text. Nothing else.
 
 Text:
 ${protectedText}`;
 
-  const pass2Instructions = [
-    "Read this and make it sound even more like a real person wrote it. Vary the rhythm. If anything sounds stiff or robotic fix it. Keep all DATASLOTn placeholders exactly as they are.",
-    "Polish this so it sounds less like AI wrote it. Break up any sentences that feel too smooth or formulaic. Keep all DATASLOTn placeholders exactly as they are.",
-    "Make this feel more natural and human. If two sentences sound too similar in structure, change one of them. Keep all DATASLOTn placeholders exactly as they are.",
-  ];
-  const pass2 = pass2Instructions[Math.floor(Math.random() * pass2Instructions.length)];
+  const pass2 = `Read this again. Find any sentence that still sounds like it was generated — too smooth, too balanced, too complete. Break it. Shorten it. Cut a word. Make it sound like a person who knows this stuff and doesn't need to prove it. Keep all DATASLOTn placeholders exactly as they are. Output only the rewritten text.`;
 
   let finalOutput;
   try {
