@@ -9,17 +9,6 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: "No text provided" });
   }
 
-  const slotMap = {};
-  let slotCounter = 0;
-  const protectedText = text.replace(
-    /(\$\d[\d,]*(?:\.\d+)?(?:\s?(?:billion|million|trillion|thousand))?|\d[\d,]*(?:\.\d+)?(?:\s?(?:billion|million|trillion|thousand))?\s?%|\d[\d,]*(?:\.\d+)?(?:\s?(?:billion|million|trillion|thousand))?|\bQ[1-4]\s?\d{4}\b|\b(?:19|20)\d{2}\b|\([A-Za-z]+,\s?(?:19|20)\d{2}\))/gi,
-    (match) => {
-      const key = `DATASLOT${slotCounter++}`;
-      slotMap[key] = match.trim();
-      return key;
-    }
-  );
-
   const toneMap = {
     "data-safe": "natural and conversational but professional",
     "academic": "formal academic",
@@ -31,32 +20,36 @@ module.exports = async function handler(req, res) {
 
   const tone = toneMap[mode] || toneMap["data-safe"];
 
-  const pass1 = `You are a person typing notes to yourself after reading an earnings report. Not a summary — just your running thoughts as you go through it. You skip words sometimes. You don't finish every thought perfectly. You react as you go.
+  const pass1 = `You are a tired grad student rewriting your own notes at 11pm. Not polished. Not structured. Just real.
 
 Rewrite the following text in a ${tone} tone.
 
 Rules:
-- DATASLOT0, DATASLOT1, DATASLOT2 etc. are placeholders for numbers. Never change, move, reorder, or remove any DATASLOT token. Preserve the exact token name.
-- Sentence lengths must vary wildly. Some one word. Some four words. Occasionally one longer one. Never two the same length back to back.
-- Drop words that a real person would drop. "Net cash at DATASLOT" not "the net cash position sits at DATASLOT".
-- No sentence should feel like it was crafted. They should feel typed.
-- At least one sentence should be a pure fragment.
-- At least one sentence should start mid-thought, like you're continuing something.
-- Never use: notably, furthermore, moreover, in conclusion, it is important to note, delve, utilize, showcasing, highlighting, underscoring, it is worth noting, on the surface, the trajectory, across the board, at the end of the day, bottom line, speaks volumes, tells a story, paint a picture, this demonstrates, this highlights, one can see, it is clear, it is evident.
-- Output only the rewritten text. Nothing else.
+- [[NUMSLOT_0]], [[NUMSLOT_1]], [[NUMSLOT_2]] etc are locked placeholders. Copy them exactly as-is. Never alter, move, split, or remove any [[NUMSLOT_N]] token.
+- Vary sentence length aggressively. One word. Three words. Twelve. Never the same length twice in a row.
+- Drop filler words a real person would drop. Write lean.
+- At least two sentences must be fragments — no verb, just a phrase.
+- At least one sentence must start mid-thought as if continuing something unsaid.
+- Use dashes to interrupt thoughts — like this — at least once.
+- Never use: notably, furthermore, moreover, in conclusion, it is important to note, delve, utilize, showcasing, highlighting, underscoring, it is worth noting, on the surface, the trajectory, across the board, at the end of the day, this demonstrates, this highlights, one can see, it is clear, it is evident, in summary, overall, as a result of this, it should be noted.
+- No two consecutive sentences can have similar grammatical structure.
+- Output only the rewritten text. No intro. No explanation. No formatting.
 
 Text:
-${protectedText}`;
+${text}`;
 
-  const pass2 = `Read every sentence. For each one ask: could an AI have written this? If yes — break it.
+  const pass2 = `You are an AI detection expert. Your job is to make this text fail every AI detector.
 
-Specifically:
-- Any sentence longer than 15 words that flows smoothly: cut it or interrupt it with a dash mid-thought
-- Any two consecutive sentences with similar structure: change one of them completely
-- Any sentence that ends too neatly: cut the last few words off or add a fragment after it
-- Scatter the rhythm so no two adjacent sentences feel related in length or structure
-- Keep all DATASLOTn placeholders exactly as they are
-- Output only the rewritten text. Nothing else.`;
+Read each sentence. Ask yourself: does this sound like it was generated? If yes — destroy the pattern.
+
+Rules:
+- Sentences over 12 words that flow too smoothly: cut them in half or stab a dash in the middle
+- Any two sentences with parallel structure: rewrite one completely
+- Any sentence that ends on a neat conclusion: cut the last few words or trail off
+- Add at least one sentence that feels like a second thought — like the writer added it after
+- Make the rhythm feel accidental, not designed
+- Keep all [[NUMSLOT_N]] placeholders exactly as they appear — do not alter them in any way
+- Output only the final text. Nothing else. No explanation.`;
 
   let finalOutput;
   try {
@@ -104,9 +97,8 @@ Specifically:
     return res.status(500).json({ error: "Failed to reach Claude API", detail: err.message });
   }
 
-  let restored = finalOutput.replace(/DATASLOT\d+/g, (match) => {
-    return slotMap[match] !== undefined ? slotMap[match] : match;
-  });
+  // Restore any leftover [[NUMSLOT_N]] that survived (safety net only — protect.js handles primary restoration)
+  let restored = finalOutput;
 
   restored = restored
     .replace(/\s+/g, " ")
