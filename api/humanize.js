@@ -20,36 +20,43 @@ module.exports = async function handler(req, res) {
 
   const tone = toneMap[mode] || toneMap["data-safe"];
 
-  const pass1 = `You are a tired grad student rewriting your own notes at 11pm. Not polished. Not structured. Just real.
+  const pass1 = `You are a human writer rewriting your own draft. You are tired, slightly frustrated, and writing fast. You do not write like an AI.
 
 Rewrite the following text in a ${tone} tone.
 
-Rules:
-- [[NUMSLOT_0]], [[NUMSLOT_1]], [[NUMSLOT_2]] etc are locked placeholders. Copy them exactly as-is. Never alter, move, split, or remove any [[NUMSLOT_N]] token.
-- Vary sentence length aggressively. One word. Three words. Twelve. Never the same length twice in a row.
-- Drop filler words a real person would drop. Write lean.
-- At least two sentences must be fragments — no verb, just a phrase.
-- At least one sentence must start mid-thought as if continuing something unsaid.
-- Use dashes to interrupt thoughts — like this — at least once.
-- Never use: notably, furthermore, moreover, in conclusion, it is important to note, delve, utilize, showcasing, highlighting, underscoring, it is worth noting, on the surface, the trajectory, across the board, at the end of the day, this demonstrates, this highlights, one can see, it is clear, it is evident, in summary, overall, as a result of this, it should be noted.
-- No two consecutive sentences can have similar grammatical structure.
-- Output only the rewritten text. No intro. No explanation. No formatting.
+HARD RULES — break any of these and the output is rejected:
+- [[NUMSLOT_0]], [[NUMSLOT_1]], [[NUMSLOT_2]] etc are locked placeholders. Copy them exactly. Never alter, split, move, or remove any [[NUMSLOT_N]] token.
+- Mix sentence lengths violently. One word. Maybe two. Then a longer one that runs a bit. Then short again. Never three sentences the same length in a row.
+- Use contractions naturally — don't, it's, they're, wasn't — wherever a human would.
+- At least one sentence must be an incomplete fragment. Just a phrase. No verb.
+- At least one sentence must start with "And" or "But" or "So" — like a real person mid-thought.
+- Use a dash to interrupt at least one thought — mid-sentence — like this.
+- At least one sentence must feel like an afterthought added at the end.
+- Vary how sentences start — never two in a row starting with the same word or structure.
+- Never use: notably, furthermore, moreover, in conclusion, it is important to note, delve, utilize, showcasing, highlighting, underscoring, it is worth noting, on the surface, the trajectory, across the board, at the end of the day, this demonstrates, this highlights, one can see, it is clear, it is evident, in summary, overall, as a result of this, it should be noted, this suggests, this indicates, it can be seen.
+- Do not write neat tidy conclusions. Real writers leave things a little open.
+- Output ONLY the rewritten text. No intro, no label, no explanation.
 
 Text:
 ${text}`;
 
-  const pass2 = `You are an AI detection expert. Your job is to make this text fail every AI detector.
+  const pass2 = `You are a human editor whose only job is to make sure this text does not get flagged by AI detectors like GPTZero or Originality.ai.
 
-Read each sentence. Ask yourself: does this sound like it was generated? If yes — destroy the pattern.
+AI detectors flag text that has: uniform sentence rhythm, smooth transitions, clean conclusions, parallel structure, and predictable word choices.
 
-Rules:
-- Sentences over 12 words that flow too smoothly: cut them in half or stab a dash in the middle
-- Any two sentences with parallel structure: rewrite one completely
-- Any sentence that ends on a neat conclusion: cut the last few words or trail off
-- Add at least one sentence that feels like a second thought — like the writer added it after
-- Make the rhythm feel accidental, not designed
-- Keep all [[NUMSLOT_N]] placeholders exactly as they appear — do not alter them in any way
-- Output only the final text. Nothing else. No explanation.`;
+Go through every sentence and do the following:
+
+1. Find any two sentences with similar length or rhythm — rewrite one to be jarringly different
+2. Find any sentence that ends cleanly and neatly — cut the last few words, or add a messy qualifier after
+3. Find any transition word (however, therefore, additionally, consequently, furthermore) — delete it or replace with something blunter
+4. Find the most "AI-sounding" sentence — the smoothest, most confident one — and make it rougher, less certain, more human
+5. Add one sentence somewhere in the middle that feels slightly off-topic or like a second thought a human would throw in
+6. Make sure at least two sentences start with lowercase connector words naturally used mid-paragraph by humans (and, but, so)
+7. Intentionally vary punctuation — use a dash somewhere, leave one sentence without a tidy ending
+
+CRITICAL: Keep all [[NUMSLOT_N]] placeholders exactly as they appear. Do not alter them in any way.
+
+Output ONLY the final text. No explanation. No label. Nothing else.`;
 
   let finalOutput;
   try {
@@ -97,7 +104,6 @@ Rules:
     return res.status(500).json({ error: "Failed to reach Claude API", detail: err.message });
   }
 
-  // Restore any leftover [[NUMSLOT_N]] that survived (safety net only — protect.js handles primary restoration)
   let restored = finalOutput;
 
   restored = restored
