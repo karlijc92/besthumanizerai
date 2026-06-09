@@ -130,6 +130,7 @@ document.getElementById("signupSubmit").addEventListener("click", async () => {
     return;
   }
 
+  // Sign up the user
   const { data, error } = await supabaseClient.auth.signUp({
     email,
     password,
@@ -140,6 +141,16 @@ document.getElementById("signupSubmit").addEventListener("click", async () => {
     errorEl.textContent = error.message;
     errorEl.style.display = "block";
     return;
+  }
+
+  // Manually insert profile row
+  if (data.user) {
+    await supabaseClient.from("profiles").insert({
+      id: data.user.id,
+      full_name: name,
+      plan: "free",
+      rewrite_count: 0
+    });
   }
 
   signupModal.classList.remove("active");
