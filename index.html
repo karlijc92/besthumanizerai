@@ -1,96 +1,86 @@
->
-<body>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BestHumanizerAI — Humanize Data-Heavy Writing Without Changing the Numbers</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .features-section {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 70px 24px;
+    }
+    .features-section h2 {
+      text-align: center;
+      font-size: 34px;
+      margin-bottom: 12px;
+      color: #111827;
+    }
+    .features-section .section-sub {
+      text-align: center;
+      font-size: 17px;
+      color: #6b7280;
+      margin-bottom: 48px;
+    }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+    .feature-card {
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 18px;
+      padding: 28px 24px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    }
+    .feature-card .icon { font-size: 28px; margin-bottom: 14px; }
+    .feature-card h3 { font-size: 18px; color: #111827; margin-bottom: 8px; }
+    .feature-card p { font-size: 15px; color: #6b7280; line-height: 1.6; }
+    .who-section { background: #f9fafb; padding: 70px 24px; }
+    .who-inner { max-width: 1100px; margin: 0 auto; }
+    .who-inner h2 { text-align: center; font-size: 34px; color: #111827; margin-bottom: 12px; }
+    .who-inner .section-sub { text-align: center; font-size: 17px; color: #6b7280; margin-bottom: 48px; }
+    .who-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .who-card { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 18px; padding: 26px 22px; text-align: center; }
+    .who-card .icon { font-size: 30px; margin-bottom: 12px; }
+    .who-card h3 { font-size: 17px; color: #111827; margin-bottom: 6px; }
+    .who-card p { font-size: 14px; color: #6b7280; line-height: 1.5; }
+    .testimonial-section { max-width: 900px; margin: 0 auto; padding: 70px 24px; text-align: center; }
+    .testimonial-section h2 { font-size: 34px; color: #111827; margin-bottom: 40px; }
+    .testimonial-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+    .testimonial-card { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 18px; padding: 26px 22px; text-align: left; box-shadow: 0 4px 20px rgba(0,0,0,0.04); }
+    .testimonial-card p { font-size: 15px; color: #374151; line-height: 1.6; margin-bottom: 16px; font-style: italic; }
+    .testimonial-card .author { font-size: 13px; font-weight: 700; color: #111827; }
+    .testimonial-card .role { font-size: 12px; color: #9ca3af; }
+    .cta-section { background: #111827; padding: 70px 24px; text-align: center; }
+    .cta-section h2 { font-size: 36px; color: #ffffff; margin-bottom: 16px; }
+    .cta-section p { font-size: 18px; color: #9ca3af; margin-bottom: 32px; }
+    .cta-section a button { background: #ffffff; color: #111827; border: none; padding: 16px 40px; font-size: 17px; font-weight: 700; border-radius: 14px; cursor: pointer; transition: 0.2s ease; }
+    .cta-section a button:hover { opacity: 0.9; transform: translateY(-1px); }
+    @media (max-width: 900px) {
+      .features-grid, .who-grid, .testimonial-grid { grid-template-columns: 1fr; }
+    }
 
-  <nav class="navbar">
-    <div class="logo">BestHumanizerAI</div>
-    <div class="nav-links">
-      <a href="index.html">Home</a>
-      <a href="tool.html">Tool</a>
-      <a href="pricing.html">Pricing</a>
-      <a href="features.html">Features</a>
-      <a href="about.html">About</a>
-    </div>
-    <div class="nav-auth-btns" id="navAuthArea">
-      <button class="nav-btn-login" id="openLogin">Log In</button>
-      <button class="nav-btn-signup" id="openSignup">Sign Up</button>
-    </div>
-  </nav>
-
-  <section class="hero">
-    <h1>Humanize Data-Heavy Writing Without Changing the Numbers</h1>
-    <p>Rewrite finance papers, analyst reports, academic writing, resumes, and business documents while protecting every number, percentage, citation, and fact.</p>
-    <a href="tool.html"><button>Try It Free</button></a>
-  </section>
-
-  <section class="features-section">
-    <h2>What Makes Us Different</h2>
-    <p class="section-sub">Built specifically for writing where accuracy matters.</p>
-    <div class="features-grid">
-      <div class="feature-card"><div class="icon">🔒</div><h3>Numbers Stay Locked</h3><p>Every dollar amount, percentage, year, and citation is detected and protected before rewriting begins.</p></div>
-      <div class="feature-card"><div class="icon">✍️</div><h3>Sounds Genuinely Human</h3><p>Not just word swaps. The writing is restructured to read naturally — like a real person wrote it.</p></div>
-      <div class="feature-card"><div class="icon">🎯</div><h3>Tone Modes Built In</h3><p>Academic, Business, Executive, Resume, Plain English — pick the tone that fits your document.</p></div>
-      <div class="feature-card"><div class="icon">⚡</div><h3>Fast Results</h3><p>Paste your text, pick your mode, and get a humanized rewrite in seconds.</p></div>
-      <div class="feature-card"><div class="icon">📊</div><h3>Data-Safe Warning System</h3><p>After every rewrite you get a confirmation that your numbers were preserved — or a warning if anything looks off.</p></div>
-      <div class="feature-card"><div class="icon">📄</div><h3>Works on Any Document Type</h3><p>Finance reports, student essays, business analysis, resumes — all handled with the same accuracy.</p></div>
-    </div>
-  </section>
-
-  <section class="who-section">
-    <div class="who-inner">
-      <h2>Who Uses BestHumanizerAI</h2>
-      <p class="section-sub">Built for anyone who writes with data.</p>
-      <div class="who-grid">
-        <div class="who-card"><div class="icon">🎓</div><h3>Students</h3><p>Rewrite essays and research papers without changing citations or data points.</p></div>
-        <div class="who-card"><div class="icon">📈</div><h3>Finance & Analysts</h3><p>Humanize quarterly reports and financial summaries while keeping every figure intact.</p></div>
-        <div class="who-card"><div class="icon">💼</div><h3>Business Writers</h3><p>Make reports and proposals sound natural without losing the professional meaning.</p></div>
-      </div>
-    </div>
-  </section>
-
-  <section class="testimonial-section">
-    <h2>What People Are Saying</h2>
-    <div class="testimonial-grid">
-      <div class="testimonial-card"><p>"Finally a humanizer that doesn't mess up my numbers. I use it for every finance report I write."</p><div class="author">Marcus T.</div><div class="role">Financial Analyst</div></div>
-      <div class="testimonial-card"><p>"I was scared to use AI humanizers because they kept changing my stats. This one actually keeps them intact."</p><div class="author">Priya S.</div><div class="role">Graduate Student</div></div>
-      <div class="testimonial-card"><p>"The business report mode is exactly what I needed. Clean, professional, and accurate."</p><div class="author">James R.</div><div class="role">Business Consultant</div></div>
-    </div>
-  </section>
-
-  <section class="cta-section">
-    <h2>Ready to Humanize Your Writing?</h2>
-    <p>Try 3 free rewrites — no account needed.</p>
-    <a href="tool.html"><button>Start For Free</button></a>
-  </section>
-
-  <!-- Login Modal -->
-  <div class="modal-overlay" id="loginModal">
-    <div class="modal">
-      <button class="modal-close" id="closeLogin">&times;</button>
-      <h2>Welcome back</h2>
-      <p class="modal-sub">Log in to your BestHumanizerAI account.</p>
-      <div class="modal-error" id="loginError">Invalid email or password. Please try again.</div>
-      <input type="email" id="loginEmail" placeholder="Email address" />
-      <input type="password" id="loginPassword" placeholder="Password" />
-      <button class="modal-btn" id="loginSubmit">Log In</button>
-      <p class="modal-switch">Don't have an account? <a id="switchToSignup">Sign up free</a></p>
-    </div>
-  </div>
-
-  <!-- Signup Modal -->
-  <div class="modal-overlay" id="signupModal">
-    <div class="modal">
-      <button class="modal-close" id="closeSignup">&times;</button>
-      <h2>Create your account</h2>
-      <p class="modal-sub">Start with 3 free rewrites. No credit card required.</p>
-      <div class="modal-error" id="signupError">Something went wrong. Please try again.</div>
-      <input type="text" id="signupName" placeholder="Full name" />
-      <input type="email" id="signupEmail" placeholder="Email address" />
-      <input type="password" id="signupPassword" placeholder="Create a password" />
-      <button class="modal-btn" id="signupSubmit">Create Account</button>
-      <p class="modal-switch">Already have an account? <a id="switchToLogin">Log in</a></p>
-    </div>
-  </div>
-
-  <script src="auth.js"></script>
-</body>
-</html>
+    /* Auth Modal Styles */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal {
+      background: #ffffff;
+      border-radius: 20px;
+      padding: 40px 36px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+      position: relative;
+    }
+    .modal h2 {
