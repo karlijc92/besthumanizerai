@@ -1,7 +1,7 @@
 // auth.js — modal open/close and Supabase auth logic
 
 const SUPABASE_URL = "https://pcsxuloradquxrfeyvab.supabase.co";
-const SUPABASE_KEY = "sb_publishable_Trsj0DnJhm46dP3TAKINpw_M1nFhipX";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBjc3h1bG9yYWRxdXhyZmV5dmFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5OTg4MDcsImV4cCI6MjA5NjU3NDgwN30.eZZ3EzSUWkgbajUGCgyrWIQ-PfipXjrZVLZc3VKcFD8";
 
 const { createClient } = supabase;
 const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -71,8 +71,8 @@ function clearSignupForm() {
 function updateNav(user) {
   if (user) {
     navAuthArea.innerHTML = `
-      <span style="color:#fff; margin-right:12px;">Hi, ${user.user_metadata?.full_name || user.email}</span>
-      <button id="logoutBtn" style="background:#e74c3c;color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;">Log Out</button>
+      <span style="color:#111827; font-size:14px; font-weight:600; margin-right:12px;">Hi, ${user.user_metadata?.full_name || user.email}</span>
+      <button id="logoutBtn" class="nav-btn-logout">Log Out</button>
     `;
     document.getElementById("logoutBtn").addEventListener("click", async () => {
       await supabaseClient.auth.signOut();
@@ -144,7 +144,5 @@ document.getElementById("signupSubmit").addEventListener("click", async () => {
 
   signupModal.classList.remove("active");
   clearSignupForm();
-  errorEl.style.display = "none";
-
   alert("Account created! Please check your email to confirm your account, then log in.");
 });
