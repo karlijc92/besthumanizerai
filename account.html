@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Account — BestHumanizerAI</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .account-page {
+      max-width: 600px;
+      margin: 60px auto;
+      padding: 0 24px;
+    }
+    .account-page h1 {
+      font-size: 30px;
+      color: #111827;
+      margin-bottom: 6px;
+    }
+    .account-page .subtitle {
+      font-size: 16px;
+      color: #6b7280;
+      margin-bottom: 36px;
+    }
+    .account-card {
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 18px;
+      padding: 32px 28px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+      margin-bottom: 24px;
+    }
+    .account-card h2 {
+      font-size: 18px;
+      color: #111827;
+      margin-bottom: 20px;
+    }
+    .account-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid #f3f4f6;
+      font-size: 15px;
+    }
+    .account-row:last-child { border-bottom: none; }
+    .account-row .label { color: #6b7280; }
+    .account-row .value { color: #111827; font-weight: 600; }
+    .plan-badge {
+      display: inline-block;
+      padding: 4px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 700;
+      background: #f3f4f6;
+      color: #111827;
+    }
+    .plan-badge.free { background: #f3f4f6; color: #6b7280; }
+    .plan-badge.basic { background: #dbeafe; color: #1d4ed8; }
+    .plan-badge.pro { background: #d1fae5; color: #065f46; }
+    .plan-badge.premium { background: #ede9fe; color: #5b21b6; }
+    .upgrade-btn {
+      display: block;
+      width: 100%;
+      background: #111827;
+      color: #ffffff;
+      border: none;
+      padding: 14px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+      text-decoration: none;
+      margin-top: 8px;
+      transition: 0.2s ease;
+    }
+    .upgrade-btn:hover { opacity: 0.88; }
+    .progress-bar-bg {
+      background: #f3f4f6;
+      border-radius: 8px;
+      height: 10px;
+      margin-top: 8px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      border-radius: 8px;
+      background: #111827;
+      transition: width 0.4s ease;
+    }
+    .progress-label {
+      font-size: 13px;
+      color: #6b7280;
+      margin-top: 6px;
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="logo">BestHumanizerAI</div>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="tool.html">Tool</a>
+      <a href="pricing.html">Pricing</a>
+      <a href="features.html">Features</a>
+      <a href="about.html">About</a>
+    </div>
+    <div class="nav-auth-btns" id="navAuthArea">
+      <button class="nav-btn-login" id="openLogin">Log In</button>
+      <button class="nav-btn-signup" id="openSignup">Sign Up</button>
+    </div>
+  </nav>
+
+  <div class="account-page">
+    <h1 id="accountName">My Account</h1>
+    <p class="subtitle" id="accountEmail">Loading...</p>
+
+    <div class="account-card">
+      <h2>Plan & Usage</h2>
+      <div class="account-row">
+        <span class="label">Current Plan</span>
+        <span class="value"><span class="plan-badge free" id="planBadge">Free</span></span>
+      </div>
+      <div class="account-row">
+        <span class="label">Rewrites Used</span>
+        <span class="value" id="rewritesUsed">0</span>
+      </div>
+      <div class="account-row">
+        <span class="label">Rewrites Remaining</span>
+        <span class="value" id="rewritesRemaining">3</span>
+      </div>
+      <div class="account-row">
+        <span class="label">Character Limit</span>
+        <span class="value" id="charLimit">1,000 per rewrite</span>
+      </div>
+      <div style="margin-top: 16px;">
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="progressBar" style="width: 0%;"></div>
+        </div>
+        <div class="progress-label" id="progressLabel">0 of 3 rewrites used</div>
+      </div>
+    </div>
+
+    <div class="account-card" id="upgradeCard">
+      <h2>Upgrade Your Plan</h2>
+      <div class="account-row">
+        <span class="label">Basic — $9/month</span>
+        <span class="value">50 rewrites, 5,000 chars</span>
+      </div>
+      <div class="account-row">
+        <span class="label">Pro — $19/month</span>
+        <span class="value">250 rewrites, 15,000 chars</span>
+      </div>
+      <div class="account-row">
+        <span class="label">Premium — $39/month</span>
+        <span class="value">Unlimited rewrites</span>
+      </div>
+      <a href="pricing.html" class="upgrade-btn">View Plans & Upgrade</a>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="auth.js"></script>
+  <script>
+    window.addEventListener("DOMContentLoaded", async () => {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+
+      if (!session) {
+        window.location.href = "index.html";
+        return;
+      }
+
+      const user = session.user;
+      document.getElementById("accountName").textContent = user.user_metadata?.full_name || "My Account";
+      document.getElementById("accountEmail").textContent = user.email;
+
+      // Load profile from Supabase
+      const { data: profile } = await supabaseClient
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+
+      if (profile) {
+        const plan = profile.plan || "free";
+        const used = profile.rewrite_count || 0;
+
+        const planLimits = {
+          free:    { rewrites: 3,   chars: "1,000" },
+          basic:   { rewrites: 50,  chars: "5,000" },
+          pro:     { rewrites: 250, chars: "15,000" },
+          premium: { rewrites: Infinity, chars: "Unlimited" }
+        };
+
+        const limits = planLimits[plan] || planLimits.free;
+        const remaining = limits.rewrites === Infinity ? "Unlimited" : Math.max(0, limits.rewrites - used);
+        const pct = limits.rewrites === Infinity ? 0 : Math.min(100, (used / limits.rewrites) * 100);
+
+        document.getElementById("planBadge").textContent = plan.charAt(0).toUpperCase() + plan.slice(1);
+        document.getElementById("planBadge").className = `plan-badge ${plan}`;
+        document.getElementById("rewritesUsed").textContent = used;
+        document.getElementById("rewritesRemaining").textContent = remaining;
+        document.getElementById("charLimit").textContent = limits.chars + " per rewrite";
+        document.getElementById("progressBar").style.width = pct + "%";
+        document.getElementById("progressLabel").textContent = `${used} of ${limits.rewrites === Infinity ? "unlimited" : limits.rewrites} rewrites used`;
+
+        // Hide upgrade card if premium
+        if (plan === "premium") {
+          document.getElementById("upgradeCard").style.display = "none";
+        }
+      }
+    });
+  </script>
+</body>
+</html>
