@@ -11,31 +11,31 @@ const signupModal = document.getElementById("signupModal");
 const navAuthArea = document.getElementById("navAuthArea");
 
 // Open modals
-document.getElementById("openLogin").addEventListener("click", () => {
+document.getElementById("openLogin")?.addEventListener("click", () => {
   loginModal.classList.add("active");
 });
-document.getElementById("openSignup").addEventListener("click", () => {
+document.getElementById("openSignup")?.addEventListener("click", () => {
   signupModal.classList.add("active");
 });
 
 // Close modals
-document.getElementById("closeLogin").addEventListener("click", () => {
+document.getElementById("closeLogin")?.addEventListener("click", () => {
   loginModal.classList.remove("active");
   clearLoginForm();
 });
-document.getElementById("closeSignup").addEventListener("click", () => {
+document.getElementById("closeSignup")?.addEventListener("click", () => {
   signupModal.classList.remove("active");
   clearSignupForm();
 });
 
 // Close on overlay click
-loginModal.addEventListener("click", (e) => {
+loginModal?.addEventListener("click", (e) => {
   if (e.target === loginModal) {
     loginModal.classList.remove("active");
     clearLoginForm();
   }
 });
-signupModal.addEventListener("click", (e) => {
+signupModal?.addEventListener("click", (e) => {
   if (e.target === signupModal) {
     signupModal.classList.remove("active");
     clearSignupForm();
@@ -43,12 +43,12 @@ signupModal.addEventListener("click", (e) => {
 });
 
 // Switch between modals
-document.getElementById("switchToSignup").addEventListener("click", () => {
+document.getElementById("switchToSignup")?.addEventListener("click", () => {
   loginModal.classList.remove("active");
   clearLoginForm();
   signupModal.classList.add("active");
 });
-document.getElementById("switchToLogin").addEventListener("click", () => {
+document.getElementById("switchToLogin")?.addEventListener("click", () => {
   signupModal.classList.remove("active");
   clearSignupForm();
   loginModal.classList.add("active");
@@ -71,7 +71,7 @@ function clearSignupForm() {
 function updateNav(user) {
   if (user) {
     navAuthArea.innerHTML = `
-      <span style="color:#111827; font-size:14px; font-weight:600; margin-right:12px;">Hi, ${user.user_metadata?.full_name || user.email}</span>
+      <a href="account.html" style="color:#111827; font-size:14px; font-weight:600; text-decoration:none; margin-right:12px;">My Account</a>
       <button id="logoutBtn" class="nav-btn-logout">Log Out</button>
     `;
     document.getElementById("logoutBtn").addEventListener("click", async () => {
@@ -88,7 +88,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 });
 
 // Login submit
-document.getElementById("loginSubmit").addEventListener("click", async () => {
+document.getElementById("loginSubmit")?.addEventListener("click", async () => {
   const email = document.getElementById("loginEmail").value.trim();
   const password = document.getElementById("loginPassword").value.trim();
   const errorEl = document.getElementById("loginError");
@@ -113,7 +113,7 @@ document.getElementById("loginSubmit").addEventListener("click", async () => {
 });
 
 // Signup submit
-document.getElementById("signupSubmit").addEventListener("click", async () => {
+document.getElementById("signupSubmit")?.addEventListener("click", async () => {
   const name = document.getElementById("signupName").value.trim();
   const email = document.getElementById("signupEmail").value.trim();
   const password = document.getElementById("signupPassword").value.trim();
@@ -130,7 +130,6 @@ document.getElementById("signupSubmit").addEventListener("click", async () => {
     return;
   }
 
-  // Sign up the user
   const { data, error } = await supabaseClient.auth.signUp({
     email,
     password,
@@ -143,7 +142,6 @@ document.getElementById("signupSubmit").addEventListener("click", async () => {
     return;
   }
 
-  // Manually insert profile row
   if (data.user) {
     await supabaseClient.from("profiles").insert({
       id: data.user.id,
