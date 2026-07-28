@@ -32,6 +32,7 @@ HARD RULES — break any of these and the output is rejected:
 - At least one sentence must start with "And" or "But" or "So" — like a real person mid-thought.
 - Use a dash to interrupt at least one thought — mid-sentence — like this.
 - At least one sentence must feel like an afterthought added at the end.
+- NEVER invent, add, or imply any fact, number, claim, cause, motive, prediction, or detail that is not explicitly present in the source text. Every idea in your output must trace back to something stated in the original. Style and tone can be human — content cannot be invented. If you need a human-sounding aside and nothing factual is available, use a short reaction instead (e.g. "wow" / "huh" / "still thinking about that one") rather than inventing a new claim.
 - Vary how sentences start — never two in a row starting with the same word or structure.
 - Never use: notably, furthermore, moreover, in conclusion, it is important to note, delve, utilize, showcasing, highlighting, underscoring, it is worth noting, on the surface, the trajectory, across the board, at the end of the day, this demonstrates, this highlights, one can see, it is clear, it is evident, in summary, overall, as a result of this, it should be noted, this suggests, this indicates, it can be seen.
 - Do not write neat tidy conclusions. Real writers leave things a little open.
@@ -53,6 +54,7 @@ Go through every sentence and do the following:
 5. Add one sentence somewhere in the middle that feels slightly off-topic or like a second thought a human would throw in
 6. Make sure at least two sentences start with lowercase connector words naturally used mid-paragraph by humans (and, but, so)
 7. Intentionally vary punctuation — use a dash somewhere, leave one sentence without a tidy ending
+8. Do not add, imply, or introduce any new fact, claim, cause, motive, or detail anywhere in the text that wasn't in the original — including in the "afterthought" sentence from step 5. If step 5's sentence would require inventing something, make it a stylistic reaction instead (e.g. "wow" / "still not sure how I feel about that") rather than a new claim.
 
 CRITICAL: Keep all [[NUMSLOT_N]] placeholders exactly as they appear. Do not alter them in any way.
 
