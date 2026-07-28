@@ -32,7 +32,6 @@ HARD RULES — break any of these and the output is rejected:
 - At least one sentence must start with "And" or "But" or "So" — like a real person mid-thought.
 - Use a dash to interrupt at least one thought — mid-sentence — like this.
 - At least one sentence must feel like an afterthought added at the end.
-- The afterthought sentence and any hedging must never invent a new claim or soften a stated fact/number into uncertainty — apply human tone only to sentence structure and phrasing, never to what is actually being claimed.
 - Vary how sentences start — never two in a row starting with the same word or structure.
 - Never use: notably, furthermore, moreover, in conclusion, it is important to note, delve, utilize, showcasing, highlighting, underscoring, it is worth noting, on the surface, the trajectory, across the board, at the end of the day, this demonstrates, this highlights, one can see, it is clear, it is evident, in summary, overall, as a result of this, it should be noted, this suggests, this indicates, it can be seen.
 - Do not write neat tidy conclusions. Real writers leave things a little open.
@@ -54,8 +53,6 @@ Go through every sentence and do the following:
 5. Add one sentence somewhere in the middle that feels slightly off-topic or like a second thought a human would throw in
 6. Make sure at least two sentences start with lowercase connector words naturally used mid-paragraph by humans (and, but, so)
 7. Intentionally vary punctuation — use a dash somewhere, leave one sentence without a tidy ending
-
-That added sentence must be a stylistic transition or reaction only — it can never introduce a new factual claim, statistic, or assumption that wasn't in the original text.
 
 CRITICAL: Keep all [[NUMSLOT_N]] placeholders exactly as they appear. Do not alter them in any way.
 
