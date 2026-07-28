@@ -10,8 +10,8 @@ module.exports = async function handler(req, res) {
   }
 
   const toneMap = {
-    "data-safe": "natural and conversational but professional",
-    "academic": "formal academic",
+    "data-safe": "polished, professional, and articulate — closer to academic or business writing than casual conversation",
+    "academic": "formal academic and scholarly, precise and measured",
     "business": "professional business report",
     "executive": "concise executive summary",
     "resume": "strong action-oriented",
@@ -20,7 +20,7 @@ module.exports = async function handler(req, res) {
 
   const tone = toneMap[mode] || toneMap["data-safe"];
 
-  const pass1 = `You are a human writer rewriting your own draft. You are tired, slightly frustrated, and writing fast. You do not write like an AI.
+  const pass1 = `You are a human writer rewriting your own draft. You write with care and expertise, but you're human — not robotic or artificially smooth. You do not write like an AI.
 
 Rewrite the following text in a ${tone} tone.
 
