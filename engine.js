@@ -19,6 +19,10 @@ const upgradeMessage = document.getElementById("upgradeMessage");
 const rewriteMode = document.getElementById("rewriteMode");
 const copyBtn = document.getElementById("copyBtn");
 
+function showOnPageError(msg) {
+  upgradeMessage.innerHTML = `<span style="color:#b91c1c; font-weight:600;">DEBUG: ${msg}</span>`;
+}
+
 function getLocalRewriteCount() {
   return Number(localStorage.getItem(HUMANIZER_LIMIT_KEY) || 0);
 }
@@ -26,8 +30,11 @@ function setLocalRewriteCount(value) {
   localStorage.setItem(HUMANIZER_LIMIT_KEY, value);
 }
 
-// Always fetch a FRESH session + profile, every time — no stale page-load state
 async function getLiveUserAndProfile() {
+  if (typeof supabaseClient === "undefined") {
+    showOnPageError("supabaseClient is not defined — auth.js did not load.");
+    return { user: null, profile: null };
+  }
   try {
     const { data: { session } } = await supabaseClient.auth.getSession();
     if (!session?.user) return { user: null, profile: null };
@@ -37,12 +44,12 @@ async function getLiveUserAndProfile() {
       .eq("id", session.user.id)
       .single();
     if (error) {
-      console.warn("Profile fetch error:", error.message);
+      showOnPageError("Profile fetch failed: " + error.message);
       return { user: session.user, profile: null };
     }
     return { user: session.user, profile };
   } catch (err) {
-    console.error("Session/profile check failed:", err);
+    showOnPageError("Session check failed: " + err.message);
     return { user: null, profile: null };
   }
 }
@@ -68,52 +75,61 @@ window.addEventListener("DOMContentLoaded", refreshDisplay);
 inputText.addEventListener("input", refreshDisplay);
 
 humanizeBtn.addEventListener("click", async function () {
-  const originalInput = inputText.value.trim();
-  if (!originalInput) {
-    alert("Please enter text to humanize.");
-    return;
-  }
-
-  const { user, profile } = await getLiveUserAndProfile();
-  const limits = getLimitsFor(profile);
-  const used = profile ? (profile.rewrite_count || 0) : getLocalRewriteCount();
-
-  // Paying user whose profile failed to load: don't block them, just log it
-  const isPaidButProfileMissing = user && !profile;
-
-  if (!isPaidButProfileMissing) {
-    if (used >= limits.rewrites) {
-      upgradeMessage.innerHTML =
-        'You have reached your rewrite limit. <a href="pricing.html">Upgrade to continue.</a>';
-      return;
-    }
-    if (originalInput.length > limits.chars) {
-      upgradeMessage.innerHTML =
-        `Your plan is limited to ${limits.chars} characters. <a href="pricing.html">Upgrade for longer text.</a>`;
-      return;
-    }
-  } else {
-    console.warn("Logged in but no profile row found — allowing rewrite without blocking.");
-  }
-
-  const selectedMode = rewriteMode ? rewriteMode.value.toLowerCase() : "data-safe";
-  humanizeBtn.disabled = true;
-  humanizeBtn.textContent = "Humanizing...";
-  outputText.value = "";
-  upgradeMessage.innerHTML = "";
-
   try {
+    upgradeMessage.innerHTML = "";
+    const originalInput = inputText.value.trim();
+    if (!originalInput) {
+      alert("Please enter text to humanize.");
+      return;
+    }
+
+    const { user, profile } = await getLiveUserAndProfile();
+    const limits = getLimitsFor(profile);
+    const used = profile ? (profile.rewrite_count || 0) : getLocalRewriteCount();
+    const isPaidButProfileMissing = user && !profile;
+
+    if (!isPaidButProfileMissing) {
+      if (used >= limits.rewrites) {
+        upgradeMessage.innerHTML =
+          'You have reached your rewrite limit. <a href="pricing.html">Upgrade to continue.</a>';
+        return;
+      }
+      if (originalInput.length > limits.chars) {
+        upgradeMessage.innerHTML =
+          `Your plan is limited to ${limits.chars} characters. <a href="pricing.html">Upgrade for longer text.</a>`;
+        return;
+      }
+    }
+
+    const selectedMode = rewriteMode ? rewriteMode.value.toLowerCase() : "data-safe";
+    humanizeBtn.disabled = true;
+    humanizeBtn.textContent = "Humanizing...";
+    outputText.value = "";
+
+    if (typeof maskProtectedData !== "function") {
+      showOnPageError("maskProtectedData is not defined — protect.js did not load.");
+      return;
+    }
+
     const { masked, map } = maskProtectedData(originalInput);
     const response = await fetch("/api/humanize", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text: masked, mode: selectedMode }),
     });
-    const data = await response.json();
-    if (!response.ok || !data.result) {
-      upgradeMessage.innerHTML = "Something went wrong. Please try again.";
+
+    if (!response.ok) {
+      const text = await response.text();
+      showOnPageError(`API returned ${response.status}: ${text.slice(0, 200)}`);
       return;
     }
+
+    const data = await response.json();
+    if (!data.result) {
+      showOnPageError("API responded but no result field: " + JSON.stringify(data).slice(0, 200));
+      return;
+    }
+
     const restored = restoreProtectedData(data.result, map);
     outputText.value = restored;
 
@@ -125,8 +141,7 @@ humanizeBtn.addEventListener("click", async function () {
     }
     await refreshDisplay();
   } catch (err) {
-    console.error("Humanize error:", err);
-    upgradeMessage.innerHTML = "Connection error. Please try again.";
+    showOnPageError("Unexpected error: " + err.message);
   } finally {
     humanizeBtn.disabled = false;
     humanizeBtn.textContent = "Humanize Text";
