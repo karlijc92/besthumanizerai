@@ -71,7 +71,7 @@ Output ONLY the final text. No explanation. No label. Nothing else.`;
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-6",
-        max_tokens: 1024,
+        max_tokens: 4096,
         messages: [{ role: "user", content: pass1 }],
       }),
     });
@@ -89,7 +89,7 @@ Output ONLY the final text. No explanation. No label. Nothing else.`;
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-6",
-        max_tokens: 1024,
+        max_tokens: 4096,
         messages: [
           { role: "user", content: pass1 },
           { role: "assistant", content: pass1Output },
