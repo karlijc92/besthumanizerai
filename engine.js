@@ -1,7 +1,14 @@
-// engine.js — calls /api/humanize for all users
+// engine.js — calls /api/humanize, gates usage by real Supabase plan when logged in
 const HUMANIZER_LIMIT_KEY = "besthumanizerai_rewrite_count";
 const FREE_REWRITES = 3;
 const FREE_CHARACTER_LIMIT = 1000;
+
+const PLAN_LIMITS = {
+  free:    { rewrites: 3,   chars: 1000 },
+  basic:   { rewrites: 50,  chars: 5000 },
+  pro:     { rewrites: 250, chars: 15000 },
+  premium: { rewrites: Infinity, chars: Infinity }
+};
 
 const humanizeBtn = document.getElementById("humanizeBtn");
 const inputText = document.getElementById("inputText");
@@ -12,47 +19,83 @@ const upgradeMessage = document.getElementById("upgradeMessage");
 const rewriteMode = document.getElementById("rewriteMode");
 const copyBtn = document.getElementById("copyBtn");
 
-function getRewriteCount() {
+let currentUser = null;
+let currentProfile = null;
+
+function getLocalRewriteCount() {
   return Number(localStorage.getItem(HUMANIZER_LIMIT_KEY) || 0);
 }
-
-function setRewriteCount(value) {
+function setLocalRewriteCount(value) {
   localStorage.setItem(HUMANIZER_LIMIT_KEY, value);
 }
 
+function getActiveLimits() {
+  if (currentProfile) {
+    return PLAN_LIMITS[currentProfile.plan] || PLAN_LIMITS.free;
+  }
+  return PLAN_LIMITS.free;
+}
+
+function getActiveUsedCount() {
+  return currentProfile ? (currentProfile.rewrite_count || 0) : getLocalRewriteCount();
+}
+
 function updateRewriteDisplay() {
-  const used = getRewriteCount();
-  rewriteCount.textContent = `${used} / ${FREE_REWRITES} Free Rewrites Used`;
+  const used = getActiveUsedCount();
+  const limits = getActiveLimits();
+  const label = limits.rewrites === Infinity ? "Unlimited" : `${used} / ${limits.rewrites}`;
+  rewriteCount.textContent = `${label} Rewrites Used`;
 }
 
 function updateCharacterDisplay() {
   const count = inputText.value.length;
-  characterCount.textContent = `${count} / ${FREE_CHARACTER_LIMIT} Characters`;
+  const limits = getActiveLimits();
+  const limitLabel = limits.chars === Infinity ? "Unlimited" : limits.chars;
+  characterCount.textContent = `${count} / ${limitLabel} Characters`;
 }
 
-humanizeBtn.addEventListener("click", async function () {
-  const currentCount = getRewriteCount();
-  const originalInput = inputText.value.trim();
+// Load real session + profile on page load
+window.addEventListener("DOMContentLoaded", async () => {
+  try {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (session?.user) {
+      currentUser = session.user;
+      const { data: profile } = await supabaseClient
+        .from("profiles")
+        .select("*")
+        .eq("id", currentUser.id)
+        .single();
+      currentProfile = profile || null;
+    }
+  } catch (err) {
+    console.error("Could not load profile:", err);
+  }
+  updateRewriteDisplay();
+  updateCharacterDisplay();
+});
 
+humanizeBtn.addEventListener("click", async function () {
+  const originalInput = inputText.value.trim();
   if (!originalInput) {
     alert("Please enter text to humanize.");
     return;
   }
 
-  if (currentCount >= FREE_REWRITES && !document.body.classList.contains("paid-user")) {
+  const limits = getActiveLimits();
+  const used = getActiveUsedCount();
+
+  if (used >= limits.rewrites) {
     upgradeMessage.innerHTML =
-      'You have reached the free rewrite limit. <a href="pricing.html">Upgrade to continue.</a>';
+      'You have reached your rewrite limit. <a href="pricing.html">Upgrade to continue.</a>';
     return;
   }
-
-  if (originalInput.length > FREE_CHARACTER_LIMIT && !document.body.classList.contains("paid-user")) {
+  if (originalInput.length > limits.chars) {
     upgradeMessage.innerHTML =
-      'Free accounts are limited to 1,000 characters. <a href="pricing.html">Upgrade for longer text.</a>';
+      `Your plan is limited to ${limits.chars} characters. <a href="pricing.html">Upgrade for longer text.</a>`;
     return;
   }
 
   const selectedMode = rewriteMode ? rewriteMode.value.toLowerCase() : "data-safe";
-
   humanizeBtn.disabled = true;
   humanizeBtn.textContent = "Humanizing...";
   outputText.value = "";
@@ -65,17 +108,24 @@ humanizeBtn.addEventListener("click", async function () {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text: masked, mode: selectedMode }),
     });
-
     const data = await response.json();
-
     if (!response.ok || !data.result) {
       upgradeMessage.innerHTML = "Something went wrong. Please try again.";
       return;
     }
-
     const restored = restoreProtectedData(data.result, map);
     outputText.value = restored;
-    setRewriteCount(currentCount + 1);
+
+    if (currentUser && currentProfile) {
+      const newCount = (currentProfile.rewrite_count || 0) + 1;
+      currentProfile.rewrite_count = newCount;
+      await supabaseClient
+        .from("profiles")
+        .update({ rewrite_count: newCount })
+        .eq("id", currentUser.id);
+    } else {
+      setLocalRewriteCount(getLocalRewriteCount() + 1);
+    }
     updateRewriteDisplay();
   } catch (err) {
     console.error("Humanize error:", err);
@@ -100,6 +150,3 @@ if (copyBtn) {
 }
 
 inputText.addEventListener("input", updateCharacterDisplay);
-
-updateRewriteDisplay();
-updateCharacterDisplay();
