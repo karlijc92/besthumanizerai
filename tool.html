@@ -17,11 +17,19 @@
       <a href="about.html">About</a>
       <a href="contact.html">Contact</a>
     </div>
-    <div class="nav-auth-btns" id="navAuthArea">
-      <button class="nav-btn-login" id="openLogin">Log In</button>
-      <button class="nav-btn-signup" id="openSignup">Sign Up</button>
-    </div>
   </nav>
+
+  <div id="accountBar" style="padding: 12px 24px; background: #f3f4f6; font-size: 14px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+    <span id="acctStatus">Checking login status...</span>
+    <span id="acctLoginBox" style="display:none; gap:8px; align-items:center;">
+      <input type="email" id="acctEmail" placeholder="Email" style="padding:6px; border:1px solid #ccc; border-radius:6px;">
+      <input type="password" id="acctPassword" placeholder="Password" style="padding:6px; border:1px solid #ccc; border-radius:6px;">
+      <button id="acctLoginBtn" type="button">Log In</button>
+      <a href="account.html" style="font-size:13px;">Sign up instead</a>
+    </span>
+    <button id="acctLogoutBtn" type="button" style="display:none;">Log Out</button>
+  </div>
+
   <main class="tool-page">
     <section class="tool-hero">
       <h1>Humanize Data-Heavy Writing Without Changing the Numbers</h1>
@@ -67,8 +75,46 @@
   <footer class="footer">
     <p>© 2026 BestHumanizerAI. All rights reserved.</p>
   </footer>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="auth.js"></script>
+  <script>
+    const acctStatus = document.getElementById("acctStatus");
+    const acctLoginBox = document.getElementById("acctLoginBox");
+    const acctLogoutBtn = document.getElementById("acctLogoutBtn");
+
+    async function updateAcctBar() {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (session?.user) {
+        const { data: profile } = await supabaseClient.from("profiles").select("*").eq("id", session.user.id).single();
+        const plan = profile?.plan || "free";
+        acctStatus.textContent = `Logged in as ${session.user.email} — Plan: ${plan.toUpperCase()}`;
+        acctLoginBox.style.display = "none";
+        acctLogoutBtn.style.display = "inline-block";
+      } else {
+        acctStatus.textContent = "Not logged in (free tier)";
+        acctLoginBox.style.display = "inline-flex";
+        acctLogoutBtn.style.display = "none";
+      }
+      if (typeof refreshDisplay === "function") refreshDisplay();
+    }
+
+    document.getElementById("acctLoginBtn").addEventListener("click", async () => {
+      const email = document.getElementById("acctEmail").value.trim();
+      const password = document.getElementById("acctPassword").value.trim();
+      const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+      if (error) { alert("Login failed: " + error.message); return; }
+      await updateAcctBar();
+    });
+
+    acctLogoutBtn.addEventListener("click", async () => {
+      await supabaseClient.auth.signOut();
+      await updateAcctBar();
+    });
+
+    window.addEventListener("DOMContentLoaded", updateAcctBar);
+  </script>
+
   <script src="protect.js"></script>
   <script src="engine.js"></script>
 </body>
