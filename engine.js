@@ -19,9 +19,6 @@ const upgradeMessage = document.getElementById("upgradeMessage");
 const rewriteMode = document.getElementById("rewriteMode");
 const copyBtn = document.getElementById("copyBtn");
 
-let currentUser = null;
-let currentProfile = null;
-
 function getLocalRewriteCount() {
   return Number(localStorage.getItem(HUMANIZER_LIMIT_KEY) || 0);
 }
@@ -29,50 +26,46 @@ function setLocalRewriteCount(value) {
   localStorage.setItem(HUMANIZER_LIMIT_KEY, value);
 }
 
-function getActiveLimits() {
-  if (currentProfile) {
-    return PLAN_LIMITS[currentProfile.plan] || PLAN_LIMITS.free;
+// Always fetch a FRESH session + profile, every time — no stale page-load state
+async function getLiveUserAndProfile() {
+  try {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session?.user) return { user: null, profile: null };
+    const { data: profile, error } = await supabaseClient
+      .from("profiles")
+      .select("*")
+      .eq("id", session.user.id)
+      .single();
+    if (error) {
+      console.warn("Profile fetch error:", error.message);
+      return { user: session.user, profile: null };
+    }
+    return { user: session.user, profile };
+  } catch (err) {
+    console.error("Session/profile check failed:", err);
+    return { user: null, profile: null };
   }
+}
+
+function getLimitsFor(profile) {
+  if (profile) return PLAN_LIMITS[profile.plan] || PLAN_LIMITS.free;
   return PLAN_LIMITS.free;
 }
 
-function getActiveUsedCount() {
-  return currentProfile ? (currentProfile.rewrite_count || 0) : getLocalRewriteCount();
-}
-
-function updateRewriteDisplay() {
-  const used = getActiveUsedCount();
-  const limits = getActiveLimits();
+async function refreshDisplay() {
+  const { profile } = await getLiveUserAndProfile();
+  const limits = getLimitsFor(profile);
+  const used = profile ? (profile.rewrite_count || 0) : getLocalRewriteCount();
   const label = limits.rewrites === Infinity ? "Unlimited" : `${used} / ${limits.rewrites}`;
   rewriteCount.textContent = `${label} Rewrites Used`;
-}
 
-function updateCharacterDisplay() {
   const count = inputText.value.length;
-  const limits = getActiveLimits();
   const limitLabel = limits.chars === Infinity ? "Unlimited" : limits.chars;
   characterCount.textContent = `${count} / ${limitLabel} Characters`;
 }
 
-// Load real session + profile on page load
-window.addEventListener("DOMContentLoaded", async () => {
-  try {
-    const { data: { session } } = await supabaseClient.auth.getSession();
-    if (session?.user) {
-      currentUser = session.user;
-      const { data: profile } = await supabaseClient
-        .from("profiles")
-        .select("*")
-        .eq("id", currentUser.id)
-        .single();
-      currentProfile = profile || null;
-    }
-  } catch (err) {
-    console.error("Could not load profile:", err);
-  }
-  updateRewriteDisplay();
-  updateCharacterDisplay();
-});
+window.addEventListener("DOMContentLoaded", refreshDisplay);
+inputText.addEventListener("input", refreshDisplay);
 
 humanizeBtn.addEventListener("click", async function () {
   const originalInput = inputText.value.trim();
@@ -81,18 +74,26 @@ humanizeBtn.addEventListener("click", async function () {
     return;
   }
 
-  const limits = getActiveLimits();
-  const used = getActiveUsedCount();
+  const { user, profile } = await getLiveUserAndProfile();
+  const limits = getLimitsFor(profile);
+  const used = profile ? (profile.rewrite_count || 0) : getLocalRewriteCount();
 
-  if (used >= limits.rewrites) {
-    upgradeMessage.innerHTML =
-      'You have reached your rewrite limit. <a href="pricing.html">Upgrade to continue.</a>';
-    return;
-  }
-  if (originalInput.length > limits.chars) {
-    upgradeMessage.innerHTML =
-      `Your plan is limited to ${limits.chars} characters. <a href="pricing.html">Upgrade for longer text.</a>`;
-    return;
+  // Paying user whose profile failed to load: don't block them, just log it
+  const isPaidButProfileMissing = user && !profile;
+
+  if (!isPaidButProfileMissing) {
+    if (used >= limits.rewrites) {
+      upgradeMessage.innerHTML =
+        'You have reached your rewrite limit. <a href="pricing.html">Upgrade to continue.</a>';
+      return;
+    }
+    if (originalInput.length > limits.chars) {
+      upgradeMessage.innerHTML =
+        `Your plan is limited to ${limits.chars} characters. <a href="pricing.html">Upgrade for longer text.</a>`;
+      return;
+    }
+  } else {
+    console.warn("Logged in but no profile row found — allowing rewrite without blocking.");
   }
 
   const selectedMode = rewriteMode ? rewriteMode.value.toLowerCase() : "data-safe";
@@ -116,17 +117,13 @@ humanizeBtn.addEventListener("click", async function () {
     const restored = restoreProtectedData(data.result, map);
     outputText.value = restored;
 
-    if (currentUser && currentProfile) {
-      const newCount = (currentProfile.rewrite_count || 0) + 1;
-      currentProfile.rewrite_count = newCount;
-      await supabaseClient
-        .from("profiles")
-        .update({ rewrite_count: newCount })
-        .eq("id", currentUser.id);
-    } else {
+    if (user && profile) {
+      const newCount = (profile.rewrite_count || 0) + 1;
+      await supabaseClient.from("profiles").update({ rewrite_count: newCount }).eq("id", user.id);
+    } else if (!user) {
       setLocalRewriteCount(getLocalRewriteCount() + 1);
     }
-    updateRewriteDisplay();
+    await refreshDisplay();
   } catch (err) {
     console.error("Humanize error:", err);
     upgradeMessage.innerHTML = "Connection error. Please try again.";
@@ -148,5 +145,3 @@ if (copyBtn) {
     });
   });
 }
-
-inputText.addEventListener("input", updateCharacterDisplay);
