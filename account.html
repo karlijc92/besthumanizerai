@@ -104,7 +104,6 @@
       <a href="tool.html">Tool</a>
       <a href="pricing.html">Pricing</a>
       <a href="features.html">Features</a>
-      <a href="about.html">About</a>
     </div>
     <div class="nav-auth-btns" id="navAuthArea">
       <button class="nav-btn-login" id="openLogin">Log In</button>
@@ -140,6 +139,7 @@
         </div>
         <div class="progress-label" id="progressLabel">0 of 3 rewrites used</div>
       </div>
+      <button id="manageSubBtn" class="upgrade-btn" style="background:#6b7280; margin-top:16px;">Manage Subscription</button>
     </div>
 
     <div class="account-card" id="upgradeCard">
@@ -175,7 +175,6 @@
       document.getElementById("accountName").textContent = user.user_metadata?.full_name || "My Account";
       document.getElementById("accountEmail").textContent = user.email;
 
-      // Load profile from Supabase
       const { data: profile } = await supabaseClient
         .from("profiles")
         .select("*")
@@ -205,11 +204,35 @@
         document.getElementById("progressBar").style.width = pct + "%";
         document.getElementById("progressLabel").textContent = `${used} of ${limits.rewrites === Infinity ? "unlimited" : limits.rewrites} rewrites used`;
 
-        // Hide upgrade card if premium
         if (plan === "premium") {
           document.getElementById("upgradeCard").style.display = "none";
         }
       }
+
+      document.getElementById("manageSubBtn")?.addEventListener("click", async () => {
+        const btn = document.getElementById("manageSubBtn");
+        btn.disabled = true;
+        btn.textContent = "Loading...";
+        try {
+          const response = await fetch("/api/create-portal-session", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId: user.id }),
+          });
+          const data = await response.json();
+          if (data.url) {
+            window.location.href = data.url;
+          } else {
+            alert("Could not open billing portal: " + (data.error || "unknown error"));
+            btn.disabled = false;
+            btn.textContent = "Manage Subscription";
+          }
+        } catch (err) {
+          alert("Connection error. Please try again.");
+          btn.disabled = false;
+          btn.textContent = "Manage Subscription";
+        }
+      });
     });
   </script>
 </body>
