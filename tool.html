@@ -83,7 +83,7 @@
       if (session?.user) {
         const { data: profile } = await supabaseClient.from("profiles").select("*").eq("id", session.user.id).single();
         const plan = profile?.plan || "free";
-        acctStatus.textContent = `${session.user.email} — ${plan.toUpperCase()}`;
+        acctStatus.innerHTML = `${session.user.email} — ${plan.toUpperCase()} &nbsp; <a href="account.html" style="color:#111827; font-weight:600;">My Account</a>`;
         acctLoginBox.style.display = "none";
         acctLogoutBtn.style.display = "inline-block";
       } else {
