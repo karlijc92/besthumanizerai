@@ -10,7 +10,6 @@ const loginModal = document.getElementById("loginModal");
 const signupModal = document.getElementById("signupModal");
 const navAuthArea = document.getElementById("navAuthArea");
 
-// Open modals
 document.getElementById("openLogin")?.addEventListener("click", () => {
   loginModal.classList.add("active");
 });
@@ -18,7 +17,6 @@ document.getElementById("openSignup")?.addEventListener("click", () => {
   signupModal.classList.add("active");
 });
 
-// Close modals
 document.getElementById("closeLogin")?.addEventListener("click", () => {
   loginModal.classList.remove("active");
   clearLoginForm();
@@ -28,7 +26,6 @@ document.getElementById("closeSignup")?.addEventListener("click", () => {
   clearSignupForm();
 });
 
-// Close on overlay click
 loginModal?.addEventListener("click", (e) => {
   if (e.target === loginModal) {
     loginModal.classList.remove("active");
@@ -42,7 +39,6 @@ signupModal?.addEventListener("click", (e) => {
   }
 });
 
-// Switch between modals
 document.getElementById("switchToSignup")?.addEventListener("click", () => {
   loginModal.classList.remove("active");
   clearLoginForm();
@@ -54,7 +50,6 @@ document.getElementById("switchToLogin")?.addEventListener("click", () => {
   loginModal.classList.add("active");
 });
 
-// Clear forms
 function clearLoginForm() {
   document.getElementById("loginEmail").value = "";
   document.getElementById("loginPassword").value = "";
@@ -67,7 +62,6 @@ function clearSignupForm() {
   document.getElementById("signupError").style.display = "none";
 }
 
-// Update nav after login/logout
 function updateNav(user) {
   if (user) {
     navAuthArea.innerHTML = `
@@ -81,13 +75,11 @@ function updateNav(user) {
   }
 }
 
-// Check session on page load
 window.addEventListener("DOMContentLoaded", async () => {
   const { data: { session } } = await supabaseClient.auth.getSession();
   if (session?.user) updateNav(session.user);
 });
 
-// Login submit
 document.getElementById("loginSubmit")?.addEventListener("click", async () => {
   const email = document.getElementById("loginEmail").value.trim();
   const password = document.getElementById("loginPassword").value.trim();
@@ -112,7 +104,6 @@ document.getElementById("loginSubmit")?.addEventListener("click", async () => {
   updateNav(data.user);
 });
 
-// Signup submit
 document.getElementById("signupSubmit")?.addEventListener("click", async () => {
   const name = document.getElementById("signupName").value.trim();
   const email = document.getElementById("signupEmail").value.trim();
@@ -142,16 +133,15 @@ document.getElementById("signupSubmit")?.addEventListener("click", async () => {
     return;
   }
 
-  if (data.user) {
-    await supabaseClient.from("profiles").insert({
-      id: data.user.id,
-      full_name: name,
-      plan: "free",
-      rewrite_count: 0
-    });
-  }
-
   signupModal.classList.remove("active");
   clearSignupForm();
-  alert("Account created! Please check your email to confirm your account, then log in.");
+
+  if (data.session) {
+    // Confirmation is off — user is already logged in, profile row created by DB trigger
+    updateNav(data.user);
+    if (typeof updateAcctBar === "function") updateAcctBar();
+  } else {
+    // Only happens if email confirmation gets turned back on later
+    alert("Account created! Please check your email to confirm your account, then log in.");
+  }
 });
