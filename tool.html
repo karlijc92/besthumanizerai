@@ -17,18 +17,15 @@
       <a href="about.html">About</a>
       <a href="contact.html">Contact</a>
     </div>
-  </nav>
-
-  <div id="accountBar" style="padding: 12px 24px; background: #f3f4f6; font-size: 14px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-    <span id="acctStatus">Checking login status...</span>
-    <span id="acctLoginBox" style="display:none; gap:8px; align-items:center;">
-      <input type="email" id="acctEmail" placeholder="Email" style="padding:6px; border:1px solid #ccc; border-radius:6px;">
-      <input type="password" id="acctPassword" placeholder="Password" style="padding:6px; border:1px solid #ccc; border-radius:6px;">
-      <button id="acctLoginBtn" type="button">Log In</button>
-      <a href="account.html" style="font-size:13px;">Sign up instead</a>
+    <div id="acctStatus" style="font-size: 14px; color: #6b7280; margin-right: 10px;">Checking...</div>
+    <span id="acctLoginBox" style="display:none; gap:6px; align-items:center;">
+      <input type="email" id="acctEmail" placeholder="Email" style="padding:5px 8px; font-size:13px; border:1px solid #ccc; border-radius:6px; width:130px;">
+      <input type="password" id="acctPassword" placeholder="Password" style="padding:5px 8px; font-size:13px; border:1px solid #ccc; border-radius:6px; width:110px;">
+      <button id="acctLoginBtn" type="button" class="nav-btn-login">Log In</button>
+      <a href="account.html" class="nav-btn-signup" style="text-decoration:none;">Sign Up</a>
     </span>
-    <button id="acctLogoutBtn" type="button" style="display:none;">Log Out</button>
-  </div>
+    <button id="acctLogoutBtn" type="button" class="nav-btn-login" style="display:none;">Log Out</button>
+  </nav>
 
   <main class="tool-page">
     <section class="tool-hero">
@@ -88,11 +85,11 @@
       if (session?.user) {
         const { data: profile } = await supabaseClient.from("profiles").select("*").eq("id", session.user.id).single();
         const plan = profile?.plan || "free";
-        acctStatus.textContent = `Logged in as ${session.user.email} — Plan: ${plan.toUpperCase()}`;
+        acctStatus.textContent = `${session.user.email} — ${plan.toUpperCase()}`;
         acctLoginBox.style.display = "none";
         acctLogoutBtn.style.display = "inline-block";
       } else {
-        acctStatus.textContent = "Not logged in (free tier)";
+        acctStatus.textContent = "";
         acctLoginBox.style.display = "inline-flex";
         acctLogoutBtn.style.display = "none";
       }
