@@ -1,6 +1,6 @@
 // engine.js — calls /api/humanize for all users
 const HUMANIZER_LIMIT_KEY = "besthumanizerai_rewrite_count";
-const FREE_REWRITES = 10;
+const FREE_REWRITES = 3;
 const FREE_CHARACTER_LIMIT = 1000;
 
 const humanizeBtn = document.getElementById("humanizeBtn");
