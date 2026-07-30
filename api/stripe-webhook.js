@@ -1,4 +1,4 @@
-// api/stripe-webhook.js — Stripe webhook to update Supabase plan on payment
+// api/stripe-webhook.js — Stripe webhook to update Supabase plan on payment/cancellation
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
@@ -34,6 +34,7 @@ export default async function handler(req, res) {
     console.error("Webhook signature error:", err.message);
     return res.status(400).json({ error: "Webhook error: " + err.message });
   }
+
   if (event.type === "checkout.session.completed") {
     const session = event.data.object;
     const email = session.customer_details?.email;
@@ -66,5 +67,37 @@ export default async function handler(req, res) {
     }
     console.log(`Updated ${email} to ${plan} plan`);
   }
+
+  if (event.type === "customer.subscription.deleted") {
+    const subscription = event.data.object;
+    const customerId = subscription.customer;
+    const { error: downgradeError } = await supabase
+      .from("profiles")
+      .update({ plan: "free", rewrite_count: 0 })
+      .eq("stripe_customer_id", customerId);
+    if (downgradeError) {
+      console.error(`Could not downgrade customer ${customerId}:`, downgradeError.message);
+      return res.status(500).json({ error: "Could not downgrade plan" });
+    }
+    console.log(`Downgraded customer ${customerId} to free plan (subscription deleted)`);
+  }
+
+  if (event.type === "customer.subscription.updated") {
+    const subscription = event.data.object;
+    const customerId = subscription.customer;
+    const badStatuses = ["canceled", "unpaid", "past_due", "incomplete_expired"];
+    if (badStatuses.includes(subscription.status)) {
+      const { error: downgradeError } = await supabase
+        .from("profiles")
+        .update({ plan: "free", rewrite_count: 0 })
+        .eq("stripe_customer_id", customerId);
+      if (downgradeError) {
+        console.error(`Could not downgrade customer ${customerId}:`, downgradeError.message);
+        return res.status(500).json({ error: "Could not downgrade plan" });
+      }
+      console.log(`Downgraded customer ${customerId} to free plan (status: ${subscription.status})`);
+    }
+  }
+
   return res.status(200).json({ received: true });
 }
