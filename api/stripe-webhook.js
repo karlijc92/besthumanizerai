@@ -1,4 +1,6 @@
 // api/stripe-webhook.js — Stripe webhook to update Supabase plan on payment/cancellation
+// NOTE: This Stripe account is shared across all 4 businesses, so this endpoint
+// receives events for ALL of them. We filter to only act on BestHumanizerAI events.
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
@@ -37,6 +39,15 @@ export default async function handler(req, res) {
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object;
+
+    // Filter: only act on events belonging to BestHumanizerAI.
+    // Other businesses on this same Stripe account will fire this event too.
+    const successUrl = session.success_url || "";
+    if (!successUrl.includes("besthumanizerai.com")) {
+      console.log(`Ignoring checkout event not for BestHumanizerAI: ${successUrl}`);
+      return res.status(200).json({ received: true, ignored: true });
+    }
+
     const email = session.customer_details?.email;
     if (!email) {
       return res.status(400).json({ error: "No email found in session" });
